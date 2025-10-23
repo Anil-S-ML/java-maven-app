@@ -1,45 +1,51 @@
 pipeline {
-  agent any
+    agent any
 
-  parameters {
-    choice(name: 'VERSION', choices: ['1.1.0', '1.2.0', '1.3.0'], description: 'Select app version')
-    booleanParam(name: 'executeTests', defaultValue: true, description: 'Run tests?')
-  }
-
-  stages {
-    stage('Init') {
-      steps {
-        script {
-          gv = load 'script.groovy'
-        }
-      }
+    tools {
+        maven 'maven-3.9'   // Make sure "maven-3.9" is configured in Jenkins Global Tools
     }
 
-    stage('Build') {
-      steps {
-        script {
-          gv.buildApp(params.VERSION)
-        }
-      }
-    }
+    stages {
 
-    stage('Test') {
-      when {
-        expression { return params.executeTests }
-      }
-      steps {
-        script {
-          gv.testApp()
+        stage('Build JAR') {
+            steps {
+                script {
+                    echo "🏗️  Building the application..."
+                    sh 'mvn clean package -DskipTests'
+                }
+            }
         }
-      }
-    }
 
-    stage('Deploy') {
-      steps {
-        script {
-          gv.deployApp()
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    echo "🐳 Building the Docker image..."
+
+                    // Use Docker Hub credentials stored in Jenkins
+                    withCredentials([usernamePassword(
+                        credentialsId: 'docker-hub-repo',   // <-- Your Jenkins credentials ID
+                        usernameVariable: 'USER',
+                        passwordVariable: 'PASS'
+                    )]) {
+                        // Replace the repo name below with YOUR Docker Hub repository
+                        sh '''
+                            docker build -t anil2469/applisting:3.0 .
+                            echo $PASS | docker login -u $US --password-stdin 
+                            docker push anil2469/applisting:3.0
+                        '''
+                    }
+                }
+            }
         }
-      }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    echo "🚀 Deploying the application..."
+                    // You can add your deployment commands here, e.g.:
+                    // sh 'kubectl apply -f deployment.yaml'
+                }
+            }
+        }
     }
-  }
 }
