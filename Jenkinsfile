@@ -2,8 +2,8 @@ pipeline {
     agent any
 
     tools {
-        // Make sure this name matches your Jenkins > Global Tool Configuration
-        maven 'maven-3.9'
+        // Use the exact Maven tool name configured in Jenkins
+        maven 'Maven 3.9'
     }
 
     stages {
@@ -11,7 +11,7 @@ pipeline {
         stage('Build JAR') {
             steps {
                 script {
-                    echo "🏗️ Building the application..."
+                    echo "🏗️ Building the application with Maven..."
                     sh 'mvn clean package -DskipTests'
                 }
             }
@@ -24,7 +24,7 @@ pipeline {
 
                     // Use Docker Hub credentials stored in Jenkins
                     withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-repo',  // Jenkins credential ID
+                        credentialsId: 'docker-hub-repo',   // Jenkins credential ID for Docker Hub
                         usernameVariable: 'USER',
                         passwordVariable: 'PASS'
                     )]) {
@@ -47,7 +47,7 @@ pipeline {
             steps {
                 script {
                     echo "🚀 Deploying the application..."
-                    // Add your deployment logic here, e.g.:
+                    // Add deployment logic here if needed, e.g.:
                     // sh 'kubectl apply -f k8s/deployment.yaml'
                 }
             }
