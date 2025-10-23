@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven-3.9'   // Make sure "maven-3.9" is configured in Jenkins Global Tools
+        // Make sure this name matches your Jenkins > Global Tool Configuration
+        maven 'maven-3.9'
     }
 
     stages {
@@ -10,27 +11,31 @@ pipeline {
         stage('Build JAR') {
             steps {
                 script {
-                    echo "🏗️  Building the application..."
-                    sh 'mvn clean package '
+                    echo "🏗️ Building the application..."
+                    sh 'mvn clean package -DskipTests'
                 }
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build & Push Docker Image') {
             steps {
                 script {
-                    echo "🐳 Building the Docker image..."
+                    echo "🐳 Building and pushing Docker image..."
 
                     // Use Docker Hub credentials stored in Jenkins
                     withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-repo',   // <-- Your Jenkins credentials ID
-                        usernameVariable: 'US',
+                        credentialsId: 'docker-hub-repo',  // Jenkins credential ID
+                        usernameVariable: 'USER',
                         passwordVariable: 'PASS'
                     )]) {
-                        // Replace the repo name below with YOUR Docker Hub repository
                         sh '''
+                            echo "🔧 Building Docker image..."
                             docker build -t anil2469/applisting:3.0 .
-                            echo $PASS | docker login -u $US --password-stdin 
+
+                            echo "🔑 Logging into Docker Hub..."
+                            echo $PASS | docker login -u $USER --password-stdin
+
+                            echo "📤 Pushing image to Docker Hub..."
                             docker push anil2469/applisting:3.0
                         '''
                     }
@@ -42,8 +47,8 @@ pipeline {
             steps {
                 script {
                     echo "🚀 Deploying the application..."
-                    // You can add your deployment commands here, e.g.:
-                    // sh 'kubectl apply -f deployment.yaml'
+                    // Add your deployment logic here, e.g.:
+                    // sh 'kubectl apply -f k8s/deployment.yaml'
                 }
             }
         }
