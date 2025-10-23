@@ -11,7 +11,7 @@ pipeline {
             steps {
                 script {
                     echo "🏗️  Building the application..."
-                    sh 'mvn clean package -DskipTests'
+                    sh 'mvn clean package '
                 }
             }
         }
@@ -24,7 +24,7 @@ pipeline {
                     // Use Docker Hub credentials stored in Jenkins
                     withCredentials([usernamePassword(
                         credentialsId: 'docker-hub-repo',   // <-- Your Jenkins credentials ID
-                        usernameVariable: 'USER',
+                        usernameVariable: 'US',
                         passwordVariable: 'PASS'
                     )]) {
                         // Replace the repo name below with YOUR Docker Hub repository
