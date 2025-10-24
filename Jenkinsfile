@@ -2,12 +2,12 @@ pipeline {
     agent any
 
     tools {
-        // Use the exact Maven tool name configured in Jenkins
         maven 'maven 3.9'
     }
 
     environment {
-        IMAGE_NAME = "anil2469/applisting:"
+        // Base image name
+        IMAGE_BASE = "anil2469/applisting"
     }
 
     stages {
@@ -16,7 +16,6 @@ pipeline {
             steps {
                 script {
                     echo '🏷️ Incrementing app version...'
-                    // Use triple quotes and escape $ for Maven properties
                     sh """
                         mvn build-helper:parse-version \
                             versions:set \
@@ -27,7 +26,7 @@ pipeline {
                     // Extract version from pom.xml
                     def matcher = readFile('pom.xml') =~ /<version>(.*)<\/version>/
                     def version = matcher[0][1]
-                    env.IMAGE_NAME = "${env.IMAGE_NAME}${version}-${BUILD_NUMBER}"
+                    env.IMAGE_NAME = "${env.IMAGE_BASE}:${version}-${BUILD_NUMBER}"
                     echo "✅ Docker image will be tagged as: ${env.IMAGE_NAME}"
                 }
             }
@@ -48,7 +47,7 @@ pipeline {
                     echo '🐳 Building and pushing Docker image...'
 
                     withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-repo',   // Jenkins credential ID for Docker Hub
+                        credentialsId: 'docker-hub-repo',
                         usernameVariable: 'USER',
                         passwordVariable: 'PASS'
                     )]) {
