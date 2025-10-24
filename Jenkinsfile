@@ -49,6 +49,7 @@ pipeline {
             steps {
                 script {
                     echo "🚀 Deploying the application..."
+                    echo "🚀 Deploying the integration..."
                     // Add deployment logic here if needed, e.g.:
                     // sh 'kubectl apply -f k8s/deployment.yaml'
                 }
