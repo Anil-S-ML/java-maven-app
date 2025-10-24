@@ -27,7 +27,7 @@ pipeline {
                     def matcher = readFile('pom.xml') =~ /<version>(.*)<\/version>/
                     def version = matcher[0][1]
                     env.IMAGE_NAME = "${env.IMAGE_BASE}:${version}-${BUILD_NUMBER}"
-                    echo "✅ Docker image will be tagged as: ${env.IMAGE_NAME}"
+                    echo "Docker image will be tagged as: ${env.IMAGE_NAME}"
                 }
             }
         }
