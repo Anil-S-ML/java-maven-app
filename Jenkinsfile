@@ -15,7 +15,7 @@ pipeline {
         stage("Increment Version") {
             steps {
                 script {
-                    echo '🏷️ Incrementing app version...'
+                    echo ' Incrementing app version...'
                     sh """
                         mvn build-helper:parse-version \
                             versions:set \
@@ -35,7 +35,7 @@ pipeline {
         stage("Build JAR") {
             steps {
                 script {
-                    echo '🏗️ Building the application with Maven...'
+                    echo 'Building the application with Maven...'
                     sh 'mvn clean package -DskipTests'
                 }
             }
@@ -44,7 +44,7 @@ pipeline {
         stage('Build & Push Docker Image') {
             steps {
                 script {
-                    echo '🐳 Building and pushing Docker image...'
+                    echo ' Building and pushing Docker image...'
 
                     withCredentials([usernamePassword(
                         credentialsId: 'docker-hub-repo',
@@ -52,13 +52,12 @@ pipeline {
                         passwordVariable: 'PASS'
                     )]) {
                         sh """
-                            echo "🔧 Building Docker image..."
+                          
                             docker build -t ${env.IMAGE_NAME} .
 
-                            echo "🔑 Logging into Docker Hub..."
                             echo \$PASS | docker login -u \$USER --password-stdin
 
-                            echo "📤 Pushing Docker image..."
+                            
                             docker push ${env.IMAGE_NAME}
                         """
                     }
@@ -69,7 +68,7 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    echo "🚀 Deploying the application..."
+                    echo "Deploying the application....."
                     // Add deployment logic here, e.g.:
                     // sh 'kubectl apply -f k8s/deployment.yaml'
                 }
