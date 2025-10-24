@@ -10,15 +10,27 @@ pipeline {
 
     stages {
 
-        stage('Build JAR') {
+        stage("increment version") {
             steps {
                 script {
-                    echo "🏗️ Building the application with Maven..."
-                    sh 'mvn clean package -DskipTests'
+                    echo 'incrementing app version...'
+                    sh 'mvn build-helper:parse-version versions:set -DnewVersion=\${parsedVersion.majorVersion}.\${parsedVersion.minorVersion}.\${parsedVersion.nextIncrementalVersion} versions:commit'
+                    def matcher = readFile('pom.xml') =~ /<version>(.*)<\/version>/
+                    def version = matcher[0][1]
+                    env.IMAGE_NAME = env.IMAGE_NAME + "$version-$buildNumber"
                 }
             }
         }
 
+
+        stage("build jar") {
+            steps {
+                script {
+                    echo "building the application..."
+                    sh 'mvn clean package'
+                }
+            }
+        }
         stage('Build & Push Docker Image') {
             steps {
                 script {
@@ -30,15 +42,12 @@ pipeline {
                         usernameVariable: 'USER',
                         passwordVariable: 'PASS'
                     )]) {
-                        sh '''
-                            echo "🔧 Building Docker image..."
-                            docker build -t anil2469/applisting:3.0 .
+                        sh ''
+                            "docker build -t anil2469/applisting:${IMAGE_NAME} . "
 
-                            echo "🔑 Logging into Docker Hub..."
                             echo $PASS | docker login -u $USER --password-stdin
 
-                            echo "📤 Pushing image to Docker Hub..."
-                            docker push anil2469/applisting:3.0
+                            " docker push ${IMAGE_NAME} "
                         '''
                     }
                 }
