@@ -1,78 +1,47 @@
+@Library('jenkins-shared-library@master') _
+
 pipeline {
     agent any
 
     tools {
-        maven 'maven 3.9'
+        maven 'maven 3.9'   // Make sure 'Maven' is configured in Jenkins global tools
     }
 
     environment {
-        // Base image name
-        IMAGE_BASE = "anil2469/applisting"
+        IMAGE_NAME = 'anil2469/applisting:java-maven-1.0'
     }
 
     stages {
 
-        stage("Increment Version") {
+        stage('Build Application') {
+            steps {
+                echo 'Building application JAR...'
+                buildJar()  // assumes buildJar() is defined in your shared library
+            }
+        }
+
+        stage('Build Docker Image') {
             steps {
                 script {
-                    echo ' Incrementing app version...'
-                    sh """
-                        mvn build-helper:parse-version \
-                            versions:set \
-                            -DnewVersion=\\\${parsedVersion.majorVersion}.\\\${parsedVersion.minorVersion}.\\\${parsedVersion.nextIncrementalVersion} \
-                            versions:commit
-                    """
-
-                    // Extract version from pom.xml
-                    def matcher = readFile('pom.xml') =~ /<version>(.*)<\/version>/
-                    def version = matcher[0][1]
-                    env.IMAGE_NAME = "${env.IMAGE_BASE}:${version}-${BUILD_NUMBER}"
-                    echo "Docker image will be tagged as: ${env.IMAGE_NAME}"
+                    echo 'Building the Docker image...'
+                    buildImage(env.IMAGE_NAME)   // buildImage() from shared library
+                    dockerLogin()                // login to Docker registry
+                    dockerPush(env.IMAGE_NAME)  // push image to Docker registry
                 }
             }
         }
 
-        stage("Build JAR") {
+        stage('Deploy to EC2') {
             steps {
                 script {
-                    echo 'Building the application with Maven...'
-                    sh 'mvn clean package -DskipTests'
-                }
-            }
-        }
-
-        stage('Build & Push Docker Image') {
-            steps {
-                script {
-                    echo ' Building and pushing Docker image...'
-
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-repo',
-                        usernameVariable: 'USER',
-                        passwordVariable: 'PASS'
-                    )]) {
-                        sh """
-                          
-                            docker build -t ${env.IMAGE_NAME} .
-
-                            echo \$PASS | docker login -u \$USER --password-stdin
-
-                            
-                            docker push ${env.IMAGE_NAME}
-                        """
+                    echo 'Deploying Docker image to EC2...'
+                    def dockerCmd = "docker run -p 3080:3080 -d ${IMAGE_NAME}"
+                    sshagent(['ec2-server-key']) {
+                        sh "ssh -o StrictHostKeyChecking=no ec2-user@18.184.54.160 '${dockerCmd}'"
                     }
                 }
             }
         }
 
-        stage('Deploy') {
-            steps {
-                script {
-                    echo "Deploying the application....."
-                    // Add deployment logic here, e.g.:
-                    // sh 'kubectl apply -f k8s/deployment.yaml'
-                }
-            }
-        }
-    }
+    } // end stages
 }
