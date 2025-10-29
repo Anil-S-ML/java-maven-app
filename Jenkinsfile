@@ -2,20 +2,21 @@ pipeline {
     agent any
 
     stages {
-        stage('Say Hello') {
+        stage('Build') {
             steps {
-                echo 'Starting the application build process...'
-                echo 'Hello from Jenkins! This is your application.'
+                sh 'mvn clean package'
             }
         }
-    }
-
-    post {
-        success {
-            echo 'Pipeline completed successfully!'
+        stage('Test') {
+            steps {
+                sh 'mvn test'
+            }
         }
-        failure {
-            echo 'Pipeline failed!'
+        stage('Deploy') {
+            steps {
+                sh 'echo "Deploying app..."'
+                // Add your deployment commands here
+            }
         }
     }
 }
