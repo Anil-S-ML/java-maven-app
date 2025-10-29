@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'Maven-3.9' // Make sure this matches your Jenkins tool name
+        maven 'maven-3.9' // Make sure this matches your Jenkins tool name
     }
 
     environment {
