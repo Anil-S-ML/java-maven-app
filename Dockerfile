@@ -1,4 +1,4 @@
-# Use JDK 17 runtime
+# Use JDK 17
 FROM openjdk:17-jdk-slim
 
 WORKDIR /usr/app
@@ -6,6 +6,7 @@ COPY target/java-maven-app-*.jar app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
 # FROM openjdk:8-jdk-alpine
 
 # WORKDIR /usr/app
