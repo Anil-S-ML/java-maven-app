@@ -2,26 +2,37 @@ pipeline {
     agent any
 
     tools {
-        // Use the Maven installation configured in Jenkins (name must match what you configured)
-        maven 'maven-3.9'
+        maven 'Maven-3.9' // Make sure this matches your Jenkins tool name
+    }
+
+    environment {
+        IMAGE_NAME = "anil2469/applisting:jma-2.0"
     }
 
     stages {
         stage('Build') {
             steps {
-                // 'mvn' now refers to Maven 3.9
                 sh 'mvn clean package'
             }
         }
-        stage('Test') {
+
+        stage('Docker Build & Push') {
             steps {
-                sh 'mvn test'
-            }
-        }
-        stage('Deploy') {
-            steps {
-                sh 'echo "Deploying app..."'
-                // Add your deployment commands here
+                script {
+                    // Use Jenkins credentials securely
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', usernameVariable: 'US', passwordVariable: 'PASS')]) {
+                        sh """
+                            # Build Docker image
+                            docker build -t $IMAGE_NAME .
+
+                            # Login to Docker Hub
+                            echo \$PASS | docker login -u \$US --password-stdin
+
+                            # Push the image
+                            docker push $IMAGE_NAME
+                        """
+                    }
+                }
             }
         }
     }
