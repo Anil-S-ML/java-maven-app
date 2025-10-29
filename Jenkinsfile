@@ -22,16 +22,18 @@ pipeline {
             steps {
                 script {
                     echo 'Building the Docker image...'
+                    withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', usernameVariable: 'US', passwordVariable: 'PASS')]) {
                     sh """
                             # Build Docker image
                             docker build -t $IMAGE_NAME .
 
                             # Login to Docker Hub
-                            echo \$PASS | docker login -u \$US --password-stdin
+                            echo $PASS | docker login -u $US --password-stdin
 
                             # Push the image
                             docker push $IMAGE_NAME
                         """
+                    }
 
                 }
             }
