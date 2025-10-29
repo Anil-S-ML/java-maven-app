@@ -1,39 +1,47 @@
+@Library('jenkins-shared-library@master') _
+
 pipeline {
     agent any
 
     tools {
-        maven 'maven-3.9' // Make sure this matches your Jenkins tool name
+        maven 'maven 3.9'   // Make sure 'Maven' is configured in Jenkins global tools
     }
 
     environment {
-        IMAGE_NAME = "anil2469/applisting:jma-2.0"
+        IMAGE_NAME = 'anil2469/applisting:java-maven-1.0'
     }
 
     stages {
-        stage('Build') {
+
+        stage('Build Application') {
             steps {
-                sh 'mvn clean package'
+                echo 'Building application JAR...'
+                buildJar()  // assumes buildJar() is defined in your shared library
             }
         }
 
-        stage('Docker Build & Push') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    // Use Jenkins credentials securely
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', usernameVariable: 'US', passwordVariable: 'PASS')]) {
-                        sh """
-                            # Build Docker image
-                            docker build -t $IMAGE_NAME .
+                    echo 'Building the Docker image...'
+                    buildImage(env.IMAGE_NAME)   // buildImage() from shared library
+                    dockerLogin()                // login to Docker registry
+                    dockerPush(env.IMAGE_NAME)  // push image to Docker registry
+                }
+            }
+        }
 
-                            # Login to Docker Hub
-                            echo \$PASS | docker login -u \$US --password-stdin
-
-                            # Push the image
-                            docker push $IMAGE_NAME
-                        """
+        stage('Deploy to EC2') {
+            steps {
+                script {
+                    echo 'Deploying Docker image to EC2...'
+                    def dockerCmd = "docker run -p 3081:3080 -d ${IMAGE_NAME}"
+                    sshagent(['ec2-server-key']) {
+                        sh "ssh -o StrictHostKeyChecking=no ec2-user@13.233.251.217 '${dockerCmd}'"
                     }
                 }
             }
         }
-    }
+
+    } 
 }
