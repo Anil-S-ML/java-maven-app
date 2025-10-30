@@ -39,11 +39,11 @@ pipeline {
             }
         }
 
-        stage('Deploy to EC2') {
+        stage('Deploy to EC2') { //deploying to ec2
             steps {
                 script {
                     echo 'Deploying Docker Compose to EC2...'
-                    def dockerCmd = "docker-compose -f docker-compose.yaml up -d"
+                    def dockerCmd = "docker-compose up -d"
 
                     sshagent(['ec2-server-key']) {
                         sh """
