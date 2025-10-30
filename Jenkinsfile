@@ -45,7 +45,7 @@ pipeline {
                     echo 'Deploying Docker Compose to EC2...'
                     def dockerCmd = "docker-compose -f docker-compose.yaml up -d"
 
-                    sshagent(['ec2-user']) {   // ✅ Use your actual credential ID
+                    sshagent(['ec2-server-key']) {   
                         sh """
                             scp docker-compose.yaml ec2-user@15.207.19.151:/home/ec2-user/
                             ssh -o StrictHostKeyChecking=no ec2-user@15.207.19.151 '${dockerCmd}'
