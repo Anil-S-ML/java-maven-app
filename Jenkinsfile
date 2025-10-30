@@ -7,7 +7,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = 'anil2469/applisting:java-maven-2.2'
+        IMAGE_NAME = 'anil2469/applisting:java-maven-3.0'
     }
 
     stages {
@@ -42,9 +42,10 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 script {
-                    echo 'Deploying Docker image to EC2...'
-                    def dockerCmd = "docker run -p 8080:8080 -d ${IMAGE_NAME}"
+                    echo 'Deploying Docker compose  to EC2...'
+                    def dockerCmd = "docker-compose -f docker-compose.yaml up -detach"
                     sshagent(['ec2-server-key']) {
+                        sh "scp docker-compose.yaml ec2-user@15.207.19.151:/home/ec2-user "
                         sh "ssh -o StrictHostKeyChecking=no ec2-user@15.207.19.151 '${dockerCmd}'"
                     }
                 }
