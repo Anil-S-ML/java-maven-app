@@ -43,7 +43,7 @@ pipeline {
             steps {
                 script {
                     echo 'Deploying Docker Compose to EC2...'
-                    def shellCmd = "bash ./server-cmnds.sh ${IMAGE_NAME}"
+                    def shellCmd = "bash ./server-cmnds.sh"
 
                     sshagent(['ec2-server-key']) {
                         sh """
