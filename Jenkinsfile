@@ -2,8 +2,7 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven-3.9'   // Make sure 'maven-3.9' is configured in Jenkins Global Tool Configuration
-    }
+        maven 'maven-3.9'  
 
     environment {
         IMAGE_NAME = 'anil2469/applisting:java-maven-3.0'
