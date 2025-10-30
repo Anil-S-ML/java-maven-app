@@ -1,9 +1,8 @@
-
 pipeline {
     agent any
 
     tools {
-        maven 'maven-3.9'   // Make sure 'Maven' is configured in Jenkins global tools
+        maven 'maven-3.9'   // Make sure 'maven-3.9' is configured in Jenkins Global Tool Configuration
     }
 
     environment {
@@ -11,7 +10,6 @@ pipeline {
     }
 
     stages {
-        stages {
 
         stage('Checkout Code') {
             steps {
@@ -22,26 +20,21 @@ pipeline {
         stage('Build Application') {
             steps {
                 echo 'Building application JAR...'
+                sh 'mvn clean package -DskipTests'
             }
         }
 
-        stage('Build Docker Image') {
+        stage('Build and Push Docker Image') {
             steps {
                 script {
-                    echo 'Building the Docker image...'
+                    echo 'Building and pushing Docker image...'
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', usernameVariable: 'US', passwordVariable: 'PASS')]) {
-                    sh """
-                            # Build Docker image
+                        sh """
                             docker build -t $IMAGE_NAME .
-
-                            # Login to Docker Hub
                             echo $PASS | docker login -u $US --password-stdin
-
-                            # Push the image
                             docker push $IMAGE_NAME
                         """
                     }
-
                 }
             }
         }
@@ -49,15 +42,17 @@ pipeline {
         stage('Deploy to EC2') {
             steps {
                 script {
-                    echo 'Deploying Docker compose  to EC2...'
-                    def dockerCmd = "docker-compose -f docker-compose.yaml up --detach"
-                    sshagent(['ec2-server-key']) {
-                        sh "scp docker-compose.yaml ec2-user@15.207.19.151:/home/ec2-user "
-                        sh "ssh -o StrictHostKeyChecking=no ec2-user@15.207.19.151 '${dockerCmd}'"
+                    echo 'Deploying Docker Compose to EC2...'
+                    def dockerCmd = "docker-compose -f docker-compose.yaml up -d"
+
+                    sshagent(['ec2-user']) {   // ✅ Use your actual credential ID
+                        sh """
+                            scp docker-compose.yaml ec2-user@15.207.19.151:/home/ec2-user/
+                            ssh -o StrictHostKeyChecking=no ec2-user@15.207.19.151 '${dockerCmd}'
+                        """
                     }
                 }
             }
         }
-
-    } 
+    }
 }
