@@ -2,7 +2,8 @@ pipeline {
     agent any
 
     tools {
-        maven 'maven-3.9'  
+        maven 'maven-3.9'
+    }
 
     environment {
         IMAGE_NAME = 'anil2469/applisting:java-maven-3.0'
@@ -44,7 +45,7 @@ pipeline {
                     echo 'Deploying Docker Compose to EC2...'
                     def dockerCmd = "docker-compose -f docker-compose.yaml up -d"
 
-                    sshagent(['ec2-server-key']) {   
+                    sshagent(['ec2-server-key']) {
                         sh """
                             scp docker-compose.yaml ec2-user@15.207.19.151:/home/ec2-user/
                             ssh -o StrictHostKeyChecking=no ec2-user@15.207.19.151 '${dockerCmd}'
