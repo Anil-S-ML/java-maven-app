@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = "anil2469/applisting:java-maven-3.0"
+        IMAGE_NAME = "anil2469/applisting:java-maven-1.0"
     }
 
     stages {
