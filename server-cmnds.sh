@@ -1,5 +1,3 @@
- #!/bin/bash
-# IMAGE_NAME="$1"
-# export IMAGE_NAME
+export IMAGE = $1
 docker-compose up -d
 echo "success"
