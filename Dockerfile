@@ -1,4 +1,4 @@
-# Use JDK 17
+# Use Java 17 instead of 8
 FROM openjdk:17-jdk-slim
 
 WORKDIR /usr/app
@@ -6,6 +6,15 @@ COPY target/java-maven-app-*.jar app.jar
 
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
+# Use JDK 17
+# FROM openjdk:17-jdk-slim
+
+# WORKDIR /usr/app
+# COPY target/java-maven-app-*.jar app.jar
+
+# EXPOSE 8080
+# ENTRYPOINT ["java", "-jar", "app.jar"]
 
 # FROM openjdk:8-jdk-alpine
 
