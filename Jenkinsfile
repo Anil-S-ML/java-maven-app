@@ -6,7 +6,7 @@ pipeline {
     }
 
     environment {
-        IMAGE_NAME = 'anil2469/applisting:java-maven-3.0'
+        IMAGE_NAME = "anil2469/applisting:java-maven-3.0"
     }
 
     stages {
@@ -30,26 +30,27 @@ pipeline {
                     echo 'Building and pushing Docker image...'
                     withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', usernameVariable: 'US', passwordVariable: 'PASS')]) {
                         sh """
-                            docker build -t $IMAGE_NAME .
-                            echo $PASS | docker login -u $US --password-stdin
-                            docker push $IMAGE_NAME
+                            docker build -t ${IMAGE_NAME} .
+                            echo \$PASS | docker login -u \$US --password-stdin
+                            docker push ${IMAGE_NAME}
                         """
                     }
                 }
             }
         }
 
-        stage('Deploy to EC2') { //deploying to ec2
+        stage('Deploy to EC2') {
             steps {
                 script {
                     echo 'Deploying Docker Compose to EC2...'
-                    def shellCmd = "bash ./server-cmnds.sh"
+                    def shellCmd = "bash ./server-cmnds.sh '${IMAGE_NAME}'"
+                    def ec2Instance = "ec2-user@15.207.19.151"
 
                     sshagent(['ec2-server-key']) {
                         sh """
-                            scp  server-cmnds.sh  ec2-user@15.207.19.151:/home/ec2-user/
-                            scp docker-compose.yml ec2-user@15.207.19.151:/home/ec2-user/
-                            ssh -o StrictHostKeyChecking=no ec2-user@15.207.19.151 '${shellCmd}'
+                            scp server-cmnds.sh ${ec2Instance}:/home/ec2-user/
+                            scp docker-compose.yml ${ec2Instance}:/home/ec2-user/
+                            ssh -o StrictHostKeyChecking=no ${ec2Instance} '${shellCmd}'
                         """
                     }
                 }
