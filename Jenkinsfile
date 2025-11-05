@@ -47,8 +47,8 @@ pipeline {
             steps {
                 script {
                 echo 'Deploying the application...'
-                sh 'envsubst <kubernetes/deployment.yaml |  kubectl -f '
-                sh 'envsubst <kubernetes/service.yaml |  kubectl -f '
+                sh 'envsubst <kubernetes/deployment.yaml |  kubectl -f - '
+                sh 'envsubst <kubernetes/service.yaml |  kubectl -f - '
                 }
             }
         } 
