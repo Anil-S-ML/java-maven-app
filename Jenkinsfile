@@ -47,11 +47,14 @@ pipeline {
             steps {
                 script {
                 echo 'Deploying the application...'
-                 sh '''
-                    echo "Applying Kubernetes manifests..."
+                sh '''
+                    echo "🔧 Configuring EKS access for demo-cluster..."
+                    aws eks update-kubeconfig --region us-east-1 --name demo-cluster
+
+                    echo " Applying Kubernetes manifests..."
                     envsubst < kubernetes/deployment.yaml | kubectl apply -f -
                     envsubst < kubernetes/service.yaml | kubectl apply -f -
-                    echo "✅ Deployment complete!"
+                    echo " Deployment complete!"
                 '''
                 }
             }
