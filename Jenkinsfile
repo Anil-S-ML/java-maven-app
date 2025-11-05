@@ -31,11 +31,12 @@ pipeline {
                 script {
                     echo 'Building and pushing Docker image...'
                     withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'US', passwordVariable: 'PASS')]) {
-                        sh """
-                            docker build -t &{DOCKER_REPO}:${IMAGE_NAME} .
-                            echo \$PASS | docker login -u \$US --password-stdin ${DOCKER_REPO_SERVER}
-                            docker push &{DOCKER_REPO}:${IMAGE_NAME}
-                        """
+                       sh """
+    docker build -t ${DOCKER_REPO}:${IMAGE_NAME} .
+    echo \$PASS | docker login -u \$US --password-stdin ${DOCKER_REPO_SERVER}
+    docker push ${DOCKER_REPO}:${IMAGE_NAME}
+"""
+
                     }
                 }
             }
