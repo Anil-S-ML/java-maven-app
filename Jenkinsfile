@@ -7,6 +7,8 @@ pipeline {
 
     environment {
         IMAGE_NAME = "anil2469/applisting:java-maven-1.0"
+        DOCKER_REPO = "${DOCKER_REPO_SERVER}/java-maven-app"
+        DOCKER_REPO_SERVER = '004380138556.dkr.ecr.us-east-1.amazonaws.com'
     }
 
     stages {
@@ -28,11 +30,11 @@ pipeline {
             steps {
                 script {
                     echo 'Building and pushing Docker image...'
-                    withCredentials([usernamePassword(credentialsId: 'docker-hub-repo', usernameVariable: 'US', passwordVariable: 'PASS')]) {
+                    withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'US', passwordVariable: 'PASS')]) {
                         sh """
-                            docker build -t ${IMAGE_NAME} .
-                            echo \$PASS | docker login -u \$US --password-stdin
-                            docker push ${IMAGE_NAME}
+                            docker build -t &{DOCKER_REPO}:${IMAGE_NAME} .
+                            echo \$PASS | docker login -u \$US --password-stdin ${DOCKER_REPO_SERVER}
+                            docker push &{DOCKER_REPO}:${IMAGE_NAME}
                         """
                     }
                 }
@@ -47,19 +49,19 @@ pipeline {
     }
     steps {
         script {
-            echo '🚀 Deploying the application to EKS...'
+            echo ' Deploying the application to EKS...'
             sh '''
-                echo "🔧 Configuring EKS access for demo-cluster..."
+                echo " Configuring EKS access for demo-cluster..."
                 aws eks update-kubeconfig --region us-east-1 --name demo-cluster
 
-                echo "📦 Applying Kubernetes manifests..."
+                echo " Applying Kubernetes manifests..."
                 envsubst < kubernetes/deployment.yaml | kubectl apply -f -
                 envsubst < kubernetes/service.yaml | kubectl apply -f -
-                echo "✅ Deployment complete!"
+                echo " Deployment complete!"
             '''
         }
     }
 }
-
+-
     }
 }
