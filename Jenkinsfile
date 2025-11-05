@@ -40,26 +40,23 @@ pipeline {
         }
 
      stage('Deploy to EKS') {
+    environment {
+        AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
+        AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
+        AWS_DEFAULT_REGION = "us-east-1"
+    }
     steps {
         script {
             echo '🚀 Deploying the application to EKS...'
-            withCredentials([
-                [$class: 'AmazonWebServicesCredentialsBinding', credentialsId: 'jenkins_aws_creds']
-            ]) {
-                sh '''
-                    export AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID
-                    export AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY
-                    export AWS_DEFAULT_REGION=us-east-1
+            sh '''
+                echo "🔧 Configuring EKS access for demo-cluster..."
+                aws eks update-kubeconfig --region us-east-1 --name demo-cluster
 
-                    echo "🔧 Configuring EKS access for demo-cluster..."
-                    aws eks update-kubeconfig --region us-east-1 --name demo-cluster
-
-                    echo "📦 Applying Kubernetes manifests..."
-                    envsubst < kubernetes/deployment.yaml | kubectl apply -f -
-                    envsubst < kubernetes/service.yaml | kubectl apply -f -
-                    echo " Deployment complete!"
-                '''
-            }
+                echo "📦 Applying Kubernetes manifests..."
+                envsubst < kubernetes/deployment.yaml | kubectl apply -f -
+                envsubst < kubernetes/service.yaml | kubectl apply -f -
+                echo "✅ Deployment complete!"
+            '''
         }
     }
 }
