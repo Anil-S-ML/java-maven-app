@@ -82,7 +82,7 @@ pipeline {
             steps {
                 script {
                 echo 'Deploying the application...'
-                sh 'kubectl create deployment ngnix-deployment --image=ngnix'
+                sh 'kubectl create deployment mongo-deployment --image=mongo'
                 }
             }
         }
