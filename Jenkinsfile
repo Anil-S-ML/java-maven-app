@@ -47,8 +47,12 @@ pipeline {
             steps {
                 script {
                 echo 'Deploying the application...'
-                sh 'envsubst <kubernetes/deployment.yaml |  kubectl -f - '
-                sh 'envsubst <kubernetes/service.yaml |  kubectl -f - '
+                 sh '''
+                    echo "Applying Kubernetes manifests..."
+                    envsubst < kubernetes/deployment.yaml | kubectl apply -f -
+                    envsubst < kubernetes/service.yaml | kubectl apply -f -
+                    echo "✅ Deployment complete!"
+                '''
                 }
             }
         } 
