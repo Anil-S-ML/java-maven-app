@@ -15,10 +15,10 @@ spec:
         app: java-maven-app
     spec:
       imagePullSecrets:
-        - name: my-registry-key
+        - name: aws-registry-key 
       containers:
         - name: java-maven-app
-          image: anil2469/applisting:$IMAGE_NAME
+          image: &DOCKER_REPO:$IMAGE_NAME
           imagePullPolicy: Always
           ports:
             - containerPort: 8080
