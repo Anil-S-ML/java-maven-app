@@ -11,6 +11,25 @@ resource "aws_vpc" "myapp-vpc" {
   cidr_block = var.vpc_cider_block
   tags       = {
     Name = "${var.env_prefix}-vpc"
+
+    connection {
+  type        = "ssh"
+  user        = "ec2-user"
+  private_key = file("~/.ssh/my-key.pem")
+  host        = self.public_ip
+}
+
+
+provisioner "file" {
+  source      = "app.sh"
+  destination = "/home/ec2-user/app.sh"
+}
+
+provisioner "local-exec" {
+  command = "echo EC2 Created at $(date) >> logs.txt"
+}
+
+
   }
 }
 
