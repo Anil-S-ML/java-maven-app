@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "java-maven-1.0"
-        DOCKER_REPO_SERVER = ' 004380138556.dkr.ecr.us-east-1.amazonaws.com'
+        DOCKER_REPO_SERVER = '004380138556.dkr.ecr.us-east-1.amazonaws.com'
         DOCKER_REPO = "${DOCKER_REPO_SERVER}/java-maven-app"
     }
 
@@ -55,7 +55,7 @@ pipeline {
         terraform init -reconfigure
         terraform apply --auto-approve
     """
-                        EC2_PUBLIC_IP = sh(
+                        env.EC2_PUBLIC_IP = sh(
                             script: "terraform output aws_public_ip",
                             returnStdout: true
                         ).trim()
@@ -74,7 +74,7 @@ pipeline {
                     echo '🚀 Deploying Docker image to EC2...'
 
                     def shellCmd = "bash /home/ec2-user/server-cmds.sh ${IMAGE_NAME}"
-                    def ec2Instance = "ec2-user@${EC2_PUBLIC_IP}"
+                    def ec2Instance = "ec2-user@${env.EC2_PUBLIC_IP}"
 
                     sshagent(['server-ssh-key']) {
                         sh "scp -o StrictHostKeyChecking=no server-cmds.sh ${ec2Instance}:/home/ec2-user/"
