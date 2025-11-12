@@ -33,7 +33,7 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'US', passwordVariable: 'PASS')]) {
                         sh """
                             docker build -t ${DOCKER_REPO}:${IMAGE_NAME} .
-                            echo \$PASS | docker login -u \$US --password-stdin ${DOCKER_REPO_SERVER}
+                           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${DOCKER_REPO_SERVER}
                             docker push ${DOCKER_REPO}:${IMAGE_NAME}
                         """
                     }
