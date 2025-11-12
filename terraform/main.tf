@@ -15,21 +15,20 @@ resource "aws_vpc" "myapp-vpc" {
   }
 
   # <-- outside the tags
-  connection {
-    type        = "ssh"
-    user        = "ec2-user"
-    private_key = file("~/.ssh/myapp-key-pair.pem")
-    host        = self.public_ip
-  }
+  # connection {
+  #   type        = "ssh"
+  #   user        = "ec2-user"
+  #   private_key = file("~/.ssh/myapp-key-pair.pem")
+  # }
 
-  provisioner "file" {
-    source      = "app.sh"
-    destination = "/home/ec2-user/app.sh"
-  }
+  # provisioner "file" {
+  #   source      = "app.sh"
+  #   destination = "/home/ec2-user/app.sh"
+  # }
 
-  provisioner "local-exec" {
-    command = "echo EC2 Created at $(date) >> logs.txt"
-  }
+  # provisioner "local-exec" {
+  #   command = "echo EC2 Created at $(date) >> logs.txt"
+  # }
 }
 
 resource "aws_subnet" "myapp-subnet-1" {
@@ -128,5 +127,5 @@ resource "aws_instance" "myapp-server" {
     Name : "${var.env_prefix}-server"
   }
 
-  user_data = file("entry-script.sh")
+  # user_data = file("entry-script.sh")
 }
