@@ -30,13 +30,14 @@ pipeline {
             steps {
                 script {
                     echo 'Building and pushing Docker image...'
-                    withCredentials([usernamePassword(credentialsId: 'ecr-credentials', usernameVariable: 'US', passwordVariable: 'PASS')]) {
-                        sh """
-                            docker build -t ${DOCKER_REPO}:${IMAGE_NAME} .
-                           aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${DOCKER_REPO_SERVER}
-                            docker push ${DOCKER_REPO}:${IMAGE_NAME}
-                        """
-                    }
+                    withAWS(credentials: 'ecr-credentials', region: 'us-east-1') {
+    sh """
+        docker build -t ${DOCKER_REPO}:${IMAGE_NAME} .
+        aws ecr get-login-password --region us-east-1 | docker login --username AWS --password-stdin ${DOCKER_REPO_SERVER}
+        docker push ${DOCKER_REPO}:${IMAGE_NAME}
+    """
+}
+
                 }
             }
         }
