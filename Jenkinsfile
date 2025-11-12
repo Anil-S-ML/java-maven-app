@@ -7,7 +7,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "java-maven-1.0"
-        DOCKER_REPO_SERVER = '004380138556.dkr.ecr.us-east-1.amazonaws.com'
+        DOCKER_REPO_SERVER = ' 004380138556.dkr.ecr.us-east-1.amazonaws.com'
         DOCKER_REPO = "${DOCKER_REPO_SERVER}/java-maven-app"
     }
 
