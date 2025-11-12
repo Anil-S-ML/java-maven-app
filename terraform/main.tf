@@ -51,6 +51,7 @@ resource "aws_default_security_group" "default-sg" {
     protocol    = "tcp"
     cidr_blocks = [
       var.my_ip
+      var.jenkins_ip
     ]
   }
 

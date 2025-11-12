@@ -18,6 +18,7 @@ pipeline {
                 checkout scm
             }
         }
+    }
 
         stage('Build Application') {
             steps {
@@ -41,27 +42,46 @@ pipeline {
             }
         }
 
-        stage('Deploy to EKS') {
+        stage('Provision server'){
             environment {
                 AWS_ACCESS_KEY_ID = credentials('jenkins_aws_access_key_id')
                 AWS_SECRET_ACCESS_KEY = credentials('jenkins_aws_secret_access_key')
-                AWS_DEFAULT_REGION = "us-east-1"
+                TF_VAR_env_prefix = 'test'
+
             }
             steps {
-                script {
-                    echo 'Deploying the application to EKS...'
-                    sh '''
-                        echo "Configuring EKS access for demo-cluster..."
-                        aws eks update-kubeconfig --region us-east-1 --name demo-cluster
-
-                        echo "Applying Kubernetes manifests..."
-                        envsubst < kubernetes/deployment.yaml | kubectl apply -f -
-                        envsubst < kubernetes/service.yaml | kubectl apply -f -
-                        echo "Deployment complete!"
-                    '''
+                script{
+                    dir('terraform'){
+                        sh "terraform init"
+                        sh "terraform apply --auto-approve"
+                        EC2_PUBLIC_IP = sh (
+                            script : "terraform output aws_public_ip",
+                            returnStdout : true 
+                        ).trim()
+                    }
                 }
             }
+            
+            
         }
 
+        stage("Deploy") {
+    steps {
+        script {
+            echo "waiting for ec2 server to intialize"
+            sleep(time:90 , unit:"SECONDS")
+
+            echo "${EC2_PUBLIC_IP}"
+            echo '🚀 Deploying Docker image to EC2...'
+
+            def shellCmd = "bash /home/ec2-user/server-cmds.sh ${IMAGE_NAME}"
+            def ec2Instance = "ec2-user@${EC2_PUBLIC_IP}"
+
+            sshagent(['server-ssh-key']) {
+                sh "scp -o StrictHostKeyChecking=no server-cmds.sh ${ec2Instance}:/home/ec2-user/"
+                sh "scp -o StrictHostKeyChecking=no docker-compose.yaml ${ec2Instance}:/home/ec2-user/"
+                sh "ssh -o StrictHostKeyChecking=no ${ec2Instance} '${shellCmd}'"
+            }
+        }
     }
 }
