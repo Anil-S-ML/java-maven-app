@@ -1,5 +1,5 @@
 variable "avail_zone" {
-  default = "eu-west-3b"
+  default = "us-east-1"
 }
 variable "vpc_cider_block" {
   default = "10.0.0.0/16"
