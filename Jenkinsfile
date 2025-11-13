@@ -52,6 +52,7 @@ pipeline {
                 script {
                     dir('terraform') {
                        sh """
+        terraform destroy --auto-approve || true
          rm -rf .terraform*
         terraform init -reconfigure
         terraform apply --auto-approve
