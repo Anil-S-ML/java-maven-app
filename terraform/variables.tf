@@ -1,5 +1,5 @@
 variable "avail_zone" {
-  default = "us-east-1"
+  default = "us-east-1a"
 }
 variable "vpc_cider_block" {
   default = "10.0.0.0/16"
@@ -17,7 +17,7 @@ variable "jenkins_ip"{
   default = "104.214.169.48/32"
 }
 variable "instance_type" {
-  default = "t2.micro"
+  default = "t3.micro"
 }
 variable "region" {
   default = "us-east-1"

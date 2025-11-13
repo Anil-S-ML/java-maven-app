@@ -13,119 +13,98 @@ resource "aws_vpc" "myapp-vpc" {
   tags = {
     Name = "${var.env_prefix}-vpc"
   }
-
-  # <-- outside the tags
-  # connection {
-  #   type        = "ssh"
-  #   user        = "ec2-user"
-  #   private_key = file("~/.ssh/myapp-key-pair.pem")
-  # }
-
-  # provisioner "file" {
-  #   source      = "app.sh"
-  #   destination = "/home/ec2-user/app.sh"
-  # }
-
-  # provisioner "local-exec" {
-  #   command = "echo EC2 Created at $(date) >> logs.txt"
-  # }
 }
 
 resource "aws_subnet" "myapp-subnet-1" {
-  vpc_id            = aws_vpc.myapp-vpc.id
-  cidr_block        = var.subnet_cider_block
+  vpc_id     = aws_vpc.myapp-vpc.id
+  cidr_block = var.subnet_cider_block
   availability_zone = var.avail_zone
-  tags              = {
+
+  tags = {
     Name = "${var.env_prefix}-subnet-1"
   }
 }
 
 resource "aws_internet_gateway" "myapp-igw" {
   vpc_id = aws_vpc.myapp-vpc.id
-  tags   = {
-    Name : "${var.env_prefix}-igw"
+
+  tags = {
+    Name = "${var.env_prefix}-igw"
   }
 }
 
-resource "aws_default_route_table" "main-rtb" {
-  default_route_table_id = aws_vpc.myapp-vpc.default_route_table_id
+resource "aws_route_table" "myapp-route-table" {
+  vpc_id = aws_vpc.myapp-vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.myapp-igw.id
   }
+
   tags = {
-    Name : "${var.env_prefix}-main-rtb"
+    Name = "${var.env_prefix}-route-table"
   }
 }
 
-resource "aws_default_security_group" "default-sg" {
-  vpc_id = aws_vpc.myapp-vpc.id
+resource "aws_route_table_association" "myapp-route-table-association" {
+  subnet_id      = aws_subnet.myapp-subnet-1.id
+  route_table_id = aws_route_table.myapp-route-table.id
+}
+
+resource "aws_security_group" "myapp-sg" {
+  vpc_id      = aws_vpc.myapp-vpc.id
+  description = "Allow SSH and HTTP traffic"
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [
-      var.my_ip,
-      var.jenkins_ip
-    ]
+    cidr_blocks = [var.my_ip, var.jenkins_ip]
   }
 
   ingress {
     from_port   = 8080
     to_port     = 8080
     protocol    = "tcp"
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   egress {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = [
-      "0.0.0.0/0"
-    ]
-    prefix_list_ids = []
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   tags = {
-    Name : "${var.env_prefix}-default-sg"
+    Name = "${var.env_prefix}-sg"
   }
 }
 
 data "aws_ami" "latest-amazon-linux-image" {
   most_recent = true
   owners      = ["amazon"]
+
   filter {
     name   = "name"
     values = ["amzn2-ami-hvm-*-x86_64-gp2"]
   }
+
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
   }
 }
 
-
 resource "aws_instance" "myapp-server" {
-  ami           = data.aws_ami.latest-amazon-linux-image.id
-  instance_type = var.instance_type
-
+  ami                    = data.aws_ami.latest-amazon-linux-image.id
+  instance_type          = var.instance_type
   subnet_id              = aws_subnet.myapp-subnet-1.id
-  vpc_security_group_ids = [
-    aws_default_security_group.default-sg.id
-  ]
-  availability_zone = var.avail_zone
-
+  vpc_security_group_ids = [aws_security_group.myapp-sg.id]
   associate_public_ip_address = true
-  key_name                    = "myapp-key-pair"
+  key_name               = "myapp-key-pair"
 
   tags = {
-    Name : "${var.env_prefix}-server"
+    Name = "${var.env_prefix}-server"
   }
-
-  # user_data = file("entry-script.sh")
 }
