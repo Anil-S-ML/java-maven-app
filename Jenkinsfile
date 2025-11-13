@@ -51,13 +51,12 @@ pipeline {
             steps {
                 script {
                     dir('terraform') {
-                       sh """
-        terraform destroy --auto-approve || true
-         rm -rf .terraform*
+    sh '''
+        rm -rf .terraform*
         terraform init -reconfigure
+        terraform destroy --auto-approve || true
         terraform apply --auto-approve
-    """
-                        env.EC2_PUBLIC_IP = sh(
+    '''             env.EC2_PUBLIC_IP = sh(
                             script: "terraform output aws_public_ip",
                             returnStdout: true
                         ).trim()
