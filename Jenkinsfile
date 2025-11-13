@@ -52,6 +52,7 @@ pipeline {
                 script {
                     dir('terraform') {
                        sh """
+         rm -rf .terraform*
         terraform init -reconfigure
         terraform apply --auto-approve
     """
