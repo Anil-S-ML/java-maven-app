@@ -74,7 +74,7 @@ pipeline {
                     echo "EC2 Public IP: ${EC2_PUBLIC_IP}"
                     echo '🚀 Deploying Docker image to EC2...'
 
-                    def shellCmd = "bash /home/ec2-user/server-cmds.sh ${IMAGE_NAME}"
+                    def shellCmd = "bash /home/ec2-user/server-cmnds.sh ${IMAGE_NAME}"
                     def ec2Instance = "ec2-user@${env.EC2_PUBLIC_IP}"
 
                     sshagent(['server-ssh-key']) {
