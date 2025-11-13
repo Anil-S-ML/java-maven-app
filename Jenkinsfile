@@ -51,7 +51,7 @@ pipeline {
                 script {
                     dir('terraform') {
                         sh '''
-                            rm -rf .terraform*
+                            rm -rf .terraform* terraform.tfstate*
                             terraform init -reconfigure
                             terraform destroy --auto-approve || true
                             terraform apply --auto-approve
@@ -71,7 +71,7 @@ pipeline {
                     echo "Waiting for EC2 server to initialize..."
                     sleep(time: 90, unit: "SECONDS")
 
-                    echo "EC2 Public IP: ${EC2_PUBLIC_IP}"
+                    echo "EC2 Public IP: ${env.EC2_PUBLIC_IP}"
                     echo '🚀 Deploying Docker image to EC2...'
 
                     def ec2Instance = "ec2-user@${env.EC2_PUBLIC_IP}"
@@ -82,6 +82,9 @@ pipeline {
                         sh "scp -o StrictHostKeyChecking=no docker-compose.yml ${ec2Instance}:/home/ec2-user/"
                         sh "ssh -o StrictHostKeyChecking=no ${ec2Instance} '${shellCmd}'"
                     }
+                    
+                    echo "🎉 Deployment completed successfully on ${env.EC2_PUBLIC_IP}"
+                    echo "🌐 Access your app at: http://${env.EC2_PUBLIC_IP}:8080"
                 }
             }
         }
