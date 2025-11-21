@@ -17,13 +17,13 @@ pipeline {
 
           sshagent(['ansible-server-key']) {
 
-            // Copy all ansible files (cfg, inventory, playbook, vars, etc.)
+            // Copy all ansible files
             sh """
               scp -o StrictHostKeyChecking=no ansible/* \
               ansible@${ANSIBLE_SERVER}:/home/ansible
             """
 
-            // Copy private key used by Ansible to SSH into EC2
+            // Copy private key securely
             withCredentials([
               sshUserPrivateKey(
                 credentialsId: 'ansible-server-key',
@@ -32,7 +32,7 @@ pipeline {
             ]) {
               sh """
                 scp -o StrictHostKeyChecking=no ${KEYFILE} \
-                ansible@${ANISBLE_SERVER}:/home/ansible/ssh-key.pem
+                ansible@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem
               """
               sh """
                 ssh -o StrictHostKeyChecking=no ansible@${ANSIBLE_SERVER} \
@@ -46,7 +46,7 @@ pipeline {
     }
 
     /* --------------------------------------------------------
-     * 2️⃣ RUN ANSIBLE PLAYBOOK ON THE ANSIBLE CONTROL NODE
+     * 2️⃣ RUN ANSIBLE PLAYBOOK
      * -------------------------------------------------------- */
     stage("Execute Ansible playbook") {
       steps {
@@ -77,5 +77,5 @@ pipeline {
       }
     }
 
-  } 
-}
+  } // end stages
+} // end pipeline
