@@ -21,13 +21,10 @@ pipeline {
                         sshUserPrivateKey(
                             credentialsId: 'ec2-server-key-1',
                             keyFileVariable: 'KEYFILE',
-                            usernameVariable: 'USER'
+                            usernameVariable: 'user'
                         )
                     ]) {
-                        sh """
-                            scp -i ${KEYFILE} \
-                            ansible@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem
-                        """
+                      sh "scp -o StrictHostKeyChecking=no -i ${KEYFILE} ${KEYFILE} ${USER}@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem"
                     }
                 }
             }
