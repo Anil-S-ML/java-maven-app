@@ -1,68 +1,66 @@
 pipeline {
-  agent any
+    agent any
 
-  environment {
-    ANSIBLE_SERVER = '20.17.177.229'
-  }
-
-  stages {
-    stage("Copy files to ansible server") {
-      steps {
-        script {
-          echo "Copying all necessary files to Ansible control node..."
-
-          sshagent(['ansible-server-key']) {
-
-            sh """
-              scp -o StrictHostKeyChecking=no ansible/* \
-              ansible@${ANSIBLE_SERVER}:/home/ansible
-            """
-
-            withCredentials([
-              sshUserPrivateKey(
-                credentialsId: 'ec2-server-key-1',
-                keyFileVariable: 'KEYFILE',
-                usernameVariable: 'user'
-              )
-            ]) {
-              sh """
-                scp -o  ${KEYFILE} \
-                ansible@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem
-              """
-            }
-
-          } 
-        }
-      }
+    environment {
+        ANSIBLE_SERVER = '20.17.177.229'
     }
-//     stage("Execute Ansible playbook") {
-//       steps {
-//         script {
-//           echo "Calling ansible playbook to configure EC2 instances..."
 
-//           def remote = [:]
-//           remote.name = "ansible-server"
-//           remote.host = "${ANSIBLE_SERVER}"
-//           remote.user = "ansible"
-//           remote.allowAnyHosts = true
+    stages {
+        stage("Copy files to ansible server") {
+            steps {
+                script {
+                    echo "Copying all necessary files to Ansible control node..."
 
-//           withCredentials([
-//             sshUserPrivateKey(
-//               credentialsId: 'ansible-server-key',
-//               keyFileVariable: 'ANSIBLE_KEY'
-//             )
-//           ]) {
+                    sshagent(['ansible-server-key']) {
+                        sh """
+                            scp -o StrictHostKeyChecking=no ansible/* \
+                            ansible@${ANSIBLE_SERVER}:/home/ansible
+                        """
+                    }
 
-//             remote.identityFile = ANSIBLE_KEY
+                    withCredentials([
+                        sshUserPrivateKey(
+                            credentialsId: 'ec2-server-key-1',
+                            keyFileVariable: 'KEYFILE',
+                            usernameVariable: 'USER'
+                        )
+                    ]) {
+                        sh """
+                            scp -i ${KEYFILE} \
+                            ansible@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem
+                        """
+                    }
+                }
+            }
+        }
 
-//             sshCommand remote: remote, command: """
-//               cd /home/ansible &&
-//               ansible-playbook -i inventory_aws_ec2.yaml my-playbook.yaml -vv
-//             """
-//           }
-//         }
-//       }
-//     }
+        // Uncomment this stage if you want to execute the playbook
+        // stage("Execute Ansible playbook") {
+        //     steps {
+        //         script {
+        //             echo "Calling ansible playbook to configure EC2 instances..."
+        //
+        //             def remote = [:]
+        //             remote.name = "ansible-server"
+        //             remote.host = "${ANSIBLE_SERVER}"
+        //             remote.user = "ansible"
+        //             remote.allowAnyHosts = true
+        //
+        //             withCredentials([
+        //                 sshUserPrivateKey(
+        //                     credentialsId: 'ansible-server-key',
+        //                     keyFileVariable: 'ANSIBLE_KEY'
+        //                 )
+        //             ]) {
+        //                 remote.identityFile = ANSIBLE_KEY
+        //                 sshCommand remote: remote, command: """
+        //                     cd /home/ansible &&
+        //                     ansible-playbook -i inventory_aws_ec2.yaml my-playbook.yaml -vv
+        //                 """
+        //             }
+        //         }
+        //     }
+        // }
 
-//   } // end stages
+    } // end stages
 } // end pipeline
