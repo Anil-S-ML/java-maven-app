@@ -6,18 +6,22 @@ pipeline {
   }
 
   stages {
+
+    /* --------------------------------------------------------
+     * 1️⃣ COPY FILES TO THE ANSIBLE CONTROL NODE
+     * -------------------------------------------------------- */
     stage("Copy files to ansible server") {
       steps {
         script {
-          echo "copying all necessary files to ansible control node"
+          echo "Copying all necessary files to Ansible control node..."
 
-          // Use ansible-server-key for everything
+          // Use ansible-server-key for SCP and SSH
           sshagent(['ansible-server-key']) {
 
-            // 1️⃣ Copy all ansible files
+            // Copy ansible config, inventory, playbook, vars
             sh "scp -o StrictHostKeyChecking=no ansible/* ansible@${ANSIBLE_SERVER}:/home/ansible"
 
-            // 2️⃣ Copy private key (use same working key)
+            // Copy private key to remote server and secure it
             withCredentials([
               sshUserPrivateKey(
                 credentialsId: 'ansible-server-key',
@@ -32,5 +36,39 @@ pipeline {
         }
       }
     }
-  }
-}
+
+    /* --------------------------------------------------------
+     * 2️⃣ RUN ANSIBLE PLAYBOOK ON THE ANSIBLE CONTROL NODE
+     * -------------------------------------------------------- */
+    stage("Execute Ansible playbook") {
+      steps {
+        script {
+          echo "Calling ansible playbook to configure EC2 instances..."
+
+          def remote = [:]
+          remote.name = "ansible-server"
+          remote.host = "${ANSIBLE_SERVER}"
+          remote.user = "ansible"
+          remote.allowAnyHosts = true
+
+          // Use same SSH key again
+          withCredentials([
+            sshUserPrivateKey(
+              credentialsId: 'ansible-server-key',
+              keyFileVariable: 'ANSIBLE_KEY'
+            )
+          ]) {
+
+            remote.identityFile = ANSIBLE_KEY
+
+            sshCommand remote: remote, command: """
+              cd /home/ansible &&
+              ansible-playbook -i inventory_aws_ec2.yaml my-playbook.yaml -vv
+            """
+          }
+        }
+      }
+    }
+
+  } // end stages
+} // end pipeline
