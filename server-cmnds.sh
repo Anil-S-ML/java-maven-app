@@ -1,8 +1,23 @@
-# export IMAGE = "$1"
-# docker-compose up -d
-# echo "success"
-#!/bin/bash
-# set -e
+!/bin/bash
+set -e
+export IMAGE = "$1"
+sudo yum update -y
+  sudo yum install -y docker
+  sudo systemctl start docker
+  sudo systemctl enable docker
+  sudo usermod -aG docker ec2-user
+
+  echo "⚙️ Installing Docker Compose..."
+  sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+  sudo chmod +x /usr/local/bin/docker-compose
+
+  echo "🔍 Verifying Docker and Compose installation..."
+  docker --version
+  docker-compose --version
+
+docker-compose up -d
+echo "success"
+
 
 # IMAGE_NAME=$1
 # ECR_URL="004380138556.dkr.ecr.us-east-1.amazonaws.com/java-maven-app"
@@ -78,60 +93,54 @@
 # echo "=============================================================="
 
 #!/bin/bash
-set -e
+# set -e
 
-echo "=============================================================="
-echo "🐳 Docker & Docker Compose Installation Script"
-echo "=============================================================="
+# echo "=============================================================="
+# echo "🐳 Docker & Docker Compose Installation Script"
+# echo "=============================================================="
 
-# -------------------------------
-# 1️⃣ Check and install Docker
-# -------------------------------
-if ! command -v docker &> /dev/null
-then
-  echo "🐳 Docker not found. Installing Docker..."
-  sudo yum update -y
-  sudo yum install -y docker
-  sudo systemctl start docker
-  sudo systemctl enable docker
-  sudo usermod -aG docker ec2-user
-  echo "✅ Docker installed successfully."
-else
-  echo "✅ Docker already installed."
-fi
+# # -------------------------------
+# # 1️⃣ Check and install Docker
+# # -------------------------------
+# if ! command -v docker &> /dev/null
+# then
+#   echo "🐳 Docker not found. Installing Docker..."
+  
+#   echo "✅ Docker installed successfully."
+# else
+#   echo "✅ Docker already installed."
+# fi
 
-# -------------------------------
-# 2️⃣ Check and install Docker Compose
-# -------------------------------
-if ! command -v docker-compose &> /dev/null
-then
-  echo "⚙️ Installing Docker Compose..."
-  sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
-  sudo chmod +x /usr/local/bin/docker-compose
-  echo "✅ Docker Compose installed successfully."
-else
-  echo "✅ Docker Compose already installed."
-fi
+# # -------------------------------
+# # 2️⃣ Check and install Docker Compose
+# # -------------------------------
+# if ! command -v docker-compose &> /dev/null
+# then
+  
+#   echo "✅ Docker Compose installed successfully."
+# else
+#   echo "✅ Docker Compose already installed."
+# fi
 
-# -------------------------------
-# 3️⃣ Start Docker if not running
-# -------------------------------
-if ! sudo systemctl is-active --quiet docker
-then
-  echo "🔄 Starting Docker service..."
-  sudo systemctl start docker
-  sudo systemctl enable docker
-  echo "✅ Docker service started."
-fi
+# # -------------------------------
+# # 3️⃣ Start Docker if not running
+# # -------------------------------
+# if ! sudo systemctl is-active --quiet docker
+# then
+#   echo "🔄 Starting Docker service..."
+#   sudo systemctl start docker
+#   sudo systemctl enable docker
+#   echo "✅ Docker service started."
+# fi
 
-# -------------------------------
-# 4️⃣ Verify installation
-# -------------------------------
-echo "🔍 Verifying Docker and Compose installation..."
-docker --version
-docker-compose --version
+# # -------------------------------
+# # 4️⃣ Verify installation
+# # -------------------------------
+# echo "🔍 Verifying Docker and Compose installation..."
+# docker --version
+# docker-compose --version
 
-echo "=============================================================="
-echo "🎉 Docker & Docker Compose setup complete!"
-echo "=============================================================="
+# echo "=============================================================="
+# echo "🎉 Docker & Docker Compose setup complete!"
+# echo "=============================================================="
 

@@ -54,6 +54,9 @@ pipeline {
                             rm -rf .terraform* terraform.tfstate*
                             terraform init -reconfigure
                             terraform destroy --auto-approve || true
+                            terraform fmt
+                            terraform validate
+                            terraform plan
                             terraform apply --auto-approve
                         '''
                         env.EC2_PUBLIC_IP = sh(
@@ -72,7 +75,7 @@ pipeline {
                     sleep(time: 90, unit: "SECONDS")
 
                     echo "EC2 Public IP: ${env.EC2_PUBLIC_IP}"
-                    echo '🚀 Deploying Docker image to EC2...'
+                    echo ' Deploying Docker image to EC2...'
 
                     def ec2Instance = "ec2-user@${env.EC2_PUBLIC_IP}"
                     def shellCmd = "bash /home/ec2-user/server-cmnds.sh ${IMAGE_NAME}"
@@ -83,8 +86,7 @@ pipeline {
                         sh "ssh -o StrictHostKeyChecking=no ${ec2Instance} '${shellCmd}'"
                     }
                     
-                    echo "🎉 Deployment completed successfully on ${env.EC2_PUBLIC_IP}"
-                    echo "🌐 Access your app at: http://${env.EC2_PUBLIC_IP}:8080"
+                    echo " EC2 Pblic Ip == ${env.EC2_PUBLIC_IP}"
                 }
             }
         }
