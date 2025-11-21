@@ -1,0 +1,13 @@
+plugin: aws_ec2
+regions:
+  - ap-south-1
+
+boto_profile: default   
+
+compose:
+  ansible_host: public_ip_address
+  ansible_python_interpreter: /usr/bin/python3
+
+keyed_groups:
+  - prefix: tag
+    key: tags.Name
