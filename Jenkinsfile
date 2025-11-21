@@ -15,7 +15,7 @@ pipeline {
           }
 
           withCredentials([sshUserPrivateKey(credentialsId: 'ec2-server-key-1', keyFileVariable: 'KEYFILE', usernameVariable:'user')]) {
-            sh 'scp $KEYFILE ansible@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem'
+            sh 'scp /home/anil_kumar/.ssh/ansible-jenkins.pem ansible@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem'
           }
         }
       }
