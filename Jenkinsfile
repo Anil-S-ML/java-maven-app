@@ -21,22 +21,23 @@ pipeline {
       }
     }
 
-//     stage("execute ansible playbook") {
-//       steps {
-//         script {
-//           echo "calling ansible playbook to configure ec2 instances"
-//           def remote = [:]
-//           remote.name = "ansible-server"
-//           remote.host = "${ANSIBLE_SERVER}"
-//           remote.user = "ansible"
-//           remote.allowAnyHosts = true
-
-//           withCredentials([sshUserPrivateKey(credentialsId: 'ansible-server-key', keyFileVariable: 'ANSIBLE_KEY')]) {
-//             remote.identityFile = ANSIBLE_KEY
-//             sshCommand remote: remote, command: "ls -l"
-//           }
-//         }
-//       }
-//     }
-//   }
-}
+    // If you want to keep the second stage commented, do NOT leave extra braces
+    // stage("execute ansible playbook") {
+    //   steps {
+    //     script {
+    //       echo "calling ansible playbook to configure ec2 instances"
+    //       def remote = [:]
+    //       remote.name = "ansible-server"
+    //       remote.host = "${ANSIBLE_SERVER}"
+    //       remote.user = "ansible"
+    //       remote.allowAnyHosts = true
+    //
+    //       withCredentials([sshUserPrivateKey(credentialsId: 'ansible-server-key', keyFileVariable: 'ANSIBLE_KEY')]) {
+    //         remote.identityFile = ANSIBLE_KEY
+    //         sshCommand remote: remote, command: "ls -l"
+    //       }
+    //     }
+    //   }
+    // }
+  } // closes stages
+} // closes pipeline
