@@ -24,7 +24,7 @@ pipeline {
                             usernameVariable: 'user'
                         )
                     ]) {
-                      sh "scp -o StrictHostKeyChecking=no -i ${KEYFILE} ${KEYFILE} ${USER}@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem"
+                      sh "scp -o StrictHostKeyChecking=no /home/anil_kumar/.ssh/ansible-jenkins.pem ansible@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem"
                     }
                 }
             }
