@@ -26,7 +26,7 @@ pipeline {
                         )
                     ]) {
                         sh """
-                            scp -o StrictHostKeyChecking=no ${KEYFILE} ansible@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem
+                            scp -o StrictHostKeyChecking=no -i ${KEYFILE} ansible@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem
                         """
                     }
                 }
