@@ -15,21 +15,29 @@ pipeline {
         script {
           echo "Copying all necessary files to Ansible control node..."
 
-          // Use ansible-server-key for SCP and SSH
           sshagent(['ansible-server-key']) {
 
-            // Copy ansible config, inventory, playbook, vars
-            sh "scp -o StrictHostKeyChecking=no ansible/* ansible@${ANSIBLE_SERVER}:/home/ansible"
+            // Copy all ansible files (cfg, inventory, playbook, vars, etc.)
+            sh """
+              scp -o StrictHostKeyChecking=no ansible/* \
+              ansible@${ANSIBLE_SERVER}:/home/ansible
+            """
 
-            // Copy private key to remote server and secure it
+            // Copy private key used by Ansible to SSH into EC2
             withCredentials([
               sshUserPrivateKey(
                 credentialsId: 'ansible-server-key',
                 keyFileVariable: 'KEYFILE'
               )
             ]) {
-              sh "scp -o StrictHostKeyChecking=no ${KEYFILE} ansible@${ANSIBLE_SERVER}:/home/ansible/ssh-key.pem"
-              sh "ssh -o StrictHostKeyChecking=no ansible@${ANSIBLE_SERVER} 'chmod 600 /home/ansible/ssh-key.pem'"
+              sh """
+                scp -o StrictHostKeyChecking=no ${KEYFILE} \
+                ansible@${ANISBLE_SERVER}:/home/ansible/ssh-key.pem
+              """
+              sh """
+                ssh -o StrictHostKeyChecking=no ansible@${ANSIBLE_SERVER} \
+                'chmod 600 /home/ansible/ssh-key.pem'
+              """
             }
 
           } // end sshagent
@@ -51,7 +59,6 @@ pipeline {
           remote.user = "ansible"
           remote.allowAnyHosts = true
 
-          // Use same SSH key again
           withCredentials([
             sshUserPrivateKey(
               credentialsId: 'ansible-server-key',
@@ -71,4 +78,4 @@ pipeline {
     }
 
   } 
-} 
+}
