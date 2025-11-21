@@ -67,34 +67,3 @@ pipeline {
 
     } // end stages
 } // end pipeline
-
-        // Uncomment this stage if you want to execute the playbook
-        // stage("Execute Ansible playbook") {
-        //     steps {
-        //         script {
-        //             echo "Calling ansible playbook to configure EC2 instances..."
-        //
-        //             def remote = [:]
-        //             remote.name = "ansible-server"
-        //             remote.host = "${ANSIBLE_SERVER}"
-        //             remote.user = "ansible"
-        //             remote.allowAnyHosts = true
-        //
-        //             withCredentials([
-        //                 sshUserPrivateKey(
-        //                     credentialsId: 'ansible-server-key',
-        //                     keyFileVariable: 'ANSIBLE_KEY'
-        //                 )
-        //             ]) {
-        //                 remote.identityFile = ANSIBLE_KEY
-        //                 sshCommand remote: remote, command: """
-        //                     cd /home/ansible &&
-        //                     ansible-playbook -i inventory_aws_ec2.yaml my-playbook.yaml -vv
-        //                 """
-        //             }
-        //         }
-        //     }
-        // }
-
-    } // end stages
-} // end pipeline
