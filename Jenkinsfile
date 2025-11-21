@@ -13,9 +13,8 @@ pipeline {
 
                     sshagent(['ansible-server-key']) {
                         sh """
-                            scp -o StrictHostKeyChecking=no ansible/* \
-                            ansible@${ANSIBLE_SERVER}:/home/ansible
-                        """
+                                scp -o StrictHostKeyChecking=no ansible/* ansible@${ANSIBLE_SERVER}:/home/ansible/
+                            """
                     }
 
                     withCredentials([
