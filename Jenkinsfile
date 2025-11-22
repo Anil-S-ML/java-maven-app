@@ -37,33 +37,33 @@ pipeline {
             }
         }
 
-        stage("Run Ansible playbook") {
-            steps {
-                script {
-                    echo "Running Ansible playbook on Ansible server..."
+    //     stage("Run Ansible playbook") {
+    //         steps {
+    //             script {
+    //                 echo "Running Ansible playbook on Ansible server..."
 
-                    def remote = [:]
-                    remote.name = "ansible-server"
-                    remote.host = "${ANSIBLE_SERVER}"
-                    remote.user = "${ANSIBLE_USER}"
-                    remote.allowAnyHosts = true
+    //                 def remote = [:]
+    //                 remote.name = "ansible-server"
+    //                 remote.host = "${ANSIBLE_SERVER}"
+    //                 remote.user = "${ANSIBLE_USER}"
+    //                 remote.allowAnyHosts = true
 
-                    withCredentials([
-                        sshUserPrivateKey(
-                            credentialsId: 'ansible-server-key',
-                            keyFileVariable: 'ANSIBLE_KEY'
-                        )
-                    ]) {
-                        remote.identityFile = ANSIBLE_KEY
-                        sshCommand remote: remote, command: """
-                            cd /home/${ANSIBLE_USER} &&
-                            chmod 600 ssh-key.pem &&
-                            ansible-playbook -i inventory_aws_ec2.yaml my-playbook.yaml -vv
-                        """
-                    }
-                }
-            }
-        }
+    //                 withCredentials([
+    //                     sshUserPrivateKey(
+    //                         credentialsId: 'ansible-server-key',
+    //                         keyFileVariable: 'ANSIBLE_KEY'
+    //                     )
+    //                 ]) {
+    //                     remote.identityFile = ANSIBLE_KEY
+    //                     sshCommand remote: remote, command: """
+    //                         cd /home/${ANSIBLE_USER} &&
+    //                         chmod 600 ssh-key.pem &&
+    //                         ansible-playbook -i inventory_aws_ec2.yaml my-playbook.yaml -vv
+    //                     """
+    //                 }
+    //             }
+    //         }
+    //     }
 
-    } // end stages
+    // } // end stages
 } // end pipeline
