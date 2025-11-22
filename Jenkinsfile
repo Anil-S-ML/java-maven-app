@@ -49,7 +49,6 @@ pipeline {
                         sshUserPrivateKey(
                             credentialsId: 'ansible-server-key',
                             keyFileVariable: 'KEYFILE'
-                            usernameVariable: 'USER'
                         )
                     ]) {
                         remote.user = USER
