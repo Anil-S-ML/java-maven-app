@@ -3,7 +3,7 @@
 # Wait for SSH connection
 # ==========================================
 - name: Wait for SSH connection
-  hosts: aws_ec2
+  hosts: all
   become: yes
   gather_facts: false
   vars:
@@ -21,7 +21,7 @@
 # Install Docker and dependencies
 # ==========================================
 - name: Install Docker and dependencies
-  hosts: aws_ec2
+  hosts: all
   become: yes
   gather_facts: yes
   vars:
@@ -107,7 +107,7 @@
 # Copy docker-compose file
 # ==========================================
 - name: Copy docker-compose.yaml to EC2
-  hosts: aws_ec2
+  hosts: all
   become: yes
   gather_facts: yes
   vars:
@@ -128,7 +128,7 @@
 # # Docker login and deploy
 # # ==========================================
 # - name: Docker login & deploy stack
-#   hosts: aws_ec2
+#   hosts: "{{vm_path}}"
 #   become: yes
 #   gather_facts: yes
 #   vars:
