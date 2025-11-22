@@ -3,11 +3,11 @@
 # Wait for SSH connection
 # ==========================================
 - name: Wait for SSH connection
-  hosts: all
+  hosts: aws_ec2
   become: yes
   gather_facts: false
   vars:
-    ansible_python_interpreter: /usr/bin/python3   # FIXED
+    ansible_python_interpreter: /usr/bin/python3
   tasks:
     - name: Wait for SSH port to be open
       wait_for:
@@ -21,37 +21,30 @@
 # Install Docker and dependencies
 # ==========================================
 - name: Install Docker and dependencies
-  hosts: all
+  hosts: aws_ec2
   become: yes
   gather_facts: yes
   vars:
-    ansible_python_interpreter: /usr/bin/python3   # FIXED
+    ansible_python_interpreter: /usr/bin/python3
   tasks:
 
-    - name: Wait for cloud-init to finish
-      shell: cloud-init status --wait
-      changed_when: false
+    - name: Remove curl-minimal to avoid conflicts
+      yum:
+        name: curl-minimal
+        state: absent
+      ignore_errors: yes
 
-    - name: Wait for yum/dnf lock to be released
-      shell: |
-        while sudo lsof /var/lib/rpm/* >/dev/null 2>&1 \
-          || sudo lsof /var/run/yum.pid >/dev/null 2>&1 \
-          || sudo lsof /var/run/dnf.pid >/dev/null 2>&1; do
-          echo "Yum/DNF is locked... waiting"
-          sleep 10
-        done
-      changed_when: false
-
-    - name: Small pause for system stabilization
-      pause:
-        seconds: 20
+    - name: Clean yum metadata cache
+      command: yum clean all
 
     - name: Install required packages
       yum:
         name:
           - docker
           - curl
+          - python3
           - python3-pip
+          - python3-virtualenv
         state: present
         update_cache: yes
 
@@ -67,51 +60,66 @@
         groups: docker
         append: yes
 
-    - name: Try downloading Docker Compose binary (retry)
+    - name: Reload SSHD so docker group applies
+      service:
+        name: sshd
+        state: reloaded
+
+    # ----------------------------------------------------------
+    # Create Python Virtual Environment for Docker SDK
+    # ----------------------------------------------------------
+    - name: Create Python virtual environment
+      command: python3 -m venv /opt/docker_venv
+      args:
+        creates: /opt/docker_venv
+
+    - name: Install Docker SDK into virtual environment
+      command: /opt/docker_venv/bin/pip install docker requests
+
+
+    # ----------------------------------------------------------
+    # Install Docker Compose V2 (official plugin)
+    # ----------------------------------------------------------
+    - name: Install Docker Compose V2 plugin
       shell: |
-        for i in 1 2 3 4 5; do
-          curl -fsSL \
-            -o /usr/local/bin/docker-compose \
-            https://github.com/docker/compose/releases/download/1.29.1/docker-compose-Linux-{{ ansible_architecture }} && break
-          echo "Retrying..."
-          sleep $((i * 5))
-        done
+        mkdir -p /usr/libexec/docker/cli-plugins
+        curl -SL https://github.com/docker/compose/releases/download/v2.29.2/docker-compose-linux-{{ ansible_architecture }} \
+          -o /usr/libexec/docker/cli-plugins/docker-compose
       args:
         executable: /bin/bash
-      register: compose_download
-      ignore_errors: true
 
-    - name: Ensure docker-compose binary is executable
+    - name: Set execute permission for compose plugin
+      file:
+        path: /usr/libexec/docker/cli-plugins/docker-compose
+        mode: '0755'
+
+
+    # ----------------------------------------------------------
+    # Add docker-compose v1 compatibility (so "docker-compose" works)
+    # ----------------------------------------------------------
+    - name: Remove old docker-compose binary if exists
       file:
         path: /usr/local/bin/docker-compose
+        state: absent
+      ignore_errors: yes
+
+    - name: Create docker-compose v1 compatibility symlink
+      file:
+        src: /usr/libexec/docker/cli-plugins/docker-compose
+        dest: /usr/local/bin/docker-compose
+        state: link
         mode: '0755'
-      when: compose_download.rc == 0
-
-    - name: Install python docker-compose library for Ansible
-      pip:
-        name: docker-compose
-        executable: /usr/bin/pip3
-
-    - name: Install Docker Python SDK
-      pip:
-        name: docker
-        executable: /usr/bin/pip3
-
-    - name: Install Python requests library
-      pip:
-        name: requests
-        executable: /usr/bin/pip3
 
 
 # ==========================================
-# Copy docker-compose file
+# Copy docker-compose.yaml
 # ==========================================
 - name: Copy docker-compose.yaml to EC2
-  hosts: all
+  hosts: aws_ec2
   become: yes
   gather_facts: yes
   vars:
-    ansible_python_interpreter: /usr/bin/python3   # FIXED
+    ansible_python_interpreter: /usr/bin/python3
   vars_files:
     - project-vars
   tasks:
@@ -124,30 +132,31 @@
         mode: '0644'
 
 
-# # ==========================================
-# # Docker login and deploy
-# # ==========================================
-# - name: Docker login & deploy stack
-#   hosts: "{{vm_path}}"
-#   become: yes
-#   gather_facts: yes
-#   vars:
-#     ansible_python_interpreter: /usr/bin/python3   # FIXED
-#   vars_files:
-#     - project-vars
-#   tasks:
+# ==========================================
+# Docker login & deploy
+# ==========================================
+- name: Docker login & deploy stack
+  hosts: aws_ec2
+  become: yes
+  gather_facts: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+    - project-vars
+  tasks:
 
-#     - name: Docker login
-#       docker_login:
-#         registry_url: https://index.docker.io/v1/
-#         username: anil2469
-#         password: "{{ docker_password }}"
-#       environment:
-#         DOCKER_HOST: unix:///var/run/docker.sock
+    - name: Docker login
+      docker_login:
+        registry_url: https://index.docker.io/v1/
+        username: anil2469
+        password: "{{ docker_password }}"
+      environment:
+        DOCKER_HOST: unix:///var/run/docker.sock
 
-#     - name: Start Docker Compose stack
-#       docker_compose:
-#         project_src: /home/ec2-user
-#         state: present
-#       environment:
-#         DOCKER_HOST: unix:///var/run/docker.sock
+    - name: Deploy stack using docker compose (v2)
+      shell: |
+        docker compose -f /home/ec2-user/docker-compose.yml up -d
+      args:
+        executable: /bin/bash
+      environment:
+        DOCKER_HOST: unix:///var/run/docker.sock
