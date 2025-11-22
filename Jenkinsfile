@@ -17,6 +17,7 @@ pipeline {
                     sshagent(['ansible-server-key']) {
                         sh """
                             scp -o StrictHostKeyChecking=no ansible/* ${ANSIBLE_USER}@${ANSIBLE_SERVER}:/home/${ANSIBLE_USER}/
+                            touch /home/${ANSIBLE_USER}/ssh-key.pem &&
                             chmod 600 /home/${ANSIBLE_USER}/ssh-key.pem
                         """
                     }
