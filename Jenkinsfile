@@ -53,7 +53,7 @@ pipeline {
                     ]) {
                         remote.user = "${ANSIBLE_USER}"
                         remote.identityFile = KEYFILE
-                        sshCommand remote: remote, command: "ls -l "
+                        sshCommand remote: remote, command: "ansible-playbook my-playbook.yaml "
                     }
                 }
             }
