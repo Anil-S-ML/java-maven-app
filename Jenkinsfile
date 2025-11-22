@@ -51,7 +51,7 @@ pipeline {
                             keyFileVariable: 'KEYFILE'
                         )
                     ]) {
-                        remote.user = USER
+                        remote.user = "${ANSIBLE_USER}"
                         remote.identityFile = KEYFILE
                         sshCommand remote: remote, command: "ls -l "
                     }
