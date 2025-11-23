@@ -2,3 +2,7 @@
 target
 terraform/.terraform/
 .terraform/
+terraform/terraform.tfstate.backup
+terraform/terraform.tfstate
+ansible/project-vars
+terraform/terraform.tfvars
