@@ -1,3 +1,4 @@
-output "aws_public_ip" {
-  value = aws_instance.myapp-server.public_ip
+
+output "ec2_public_ip_1" {
+  value = aws_instance.my_app_server_one.public_ip
 }

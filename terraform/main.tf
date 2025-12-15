@@ -1,65 +1,62 @@
-# terraform {
-#   required_version = ">= 0.12.0"
-#   backend "s3" {
-#     bucket = "myapp-bucket"
-#     key = "myapp/state.tfstate"
-#     region = "eu-west-3"
-#   }
-# }
+provider "aws" {
+  region = "ap-south-1"
+}
 
-resource "aws_vpc" "myapp-vpc" {
-  cidr_block = var.vpc_cider_block
+resource "aws_vpc" "my_app_vpc" {
+  cidr_block = var.vpc_cidr_block
+  enable_dns_hostnames = true 
 
   tags = {
     Name = "${var.env_prefix}-vpc"
   }
 }
 
-resource "aws_subnet" "myapp-subnet-1" {
-  vpc_id     = aws_vpc.myapp-vpc.id
-  cidr_block = var.subnet_cider_block
+resource "aws_subnet" "my_app_subnet" {
+  vpc_id            = aws_vpc.my_app_vpc.id
+  cidr_block        = var.subnet_cidr_block
   availability_zone = var.avail_zone
+  map_public_ip_on_launch = true
 
   tags = {
     Name = "${var.env_prefix}-subnet-1"
   }
 }
 
-resource "aws_internet_gateway" "myapp-igw" {
-  vpc_id = aws_vpc.myapp-vpc.id
+resource "aws_internet_gateway" "my_app_igw" {
+  vpc_id = aws_vpc.my_app_vpc.id
 
   tags = {
     Name = "${var.env_prefix}-igw"
   }
 }
 
-resource "aws_route_table" "myapp-route-table" {
-  vpc_id = aws_vpc.myapp-vpc.id
+resource "aws_route_table" "my_route_table" {
+  vpc_id = aws_vpc.my_app_vpc.id
 
   route {
     cidr_block = "0.0.0.0/0"
-    gateway_id = aws_internet_gateway.myapp-igw.id
+    gateway_id = aws_internet_gateway.my_app_igw.id
   }
 
   tags = {
-    Name = "${var.env_prefix}-route-table"
+    Name = "${var.env_prefix}-rtb"
   }
 }
 
-resource "aws_route_table_association" "myapp-route-table-association" {
-  subnet_id      = aws_subnet.myapp-subnet-1.id
-  route_table_id = aws_route_table.myapp-route-table.id
+resource "aws_route_table_association" "my_rtb_association" {
+  subnet_id      = aws_subnet.my_app_subnet.id
+  route_table_id = aws_route_table.my_route_table.id
 }
 
-resource "aws_security_group" "myapp-sg" {
-  vpc_id      = aws_vpc.myapp-vpc.id
-  description = "Allow SSH and HTTP traffic"
+resource "aws_security_group" "my_sg" {
+  name   = "${var.env_prefix}-sg"
+  vpc_id = aws_vpc.my_app_vpc.id
 
   ingress {
     from_port   = 22
     to_port     = 22
     protocol    = "tcp"
-    cidr_blocks = [var.my_ip, var.jenkins_ip]
+    cidr_blocks = ["0.0.0.0/0"]
   }
 
   ingress {
@@ -81,13 +78,13 @@ resource "aws_security_group" "myapp-sg" {
   }
 }
 
-data "aws_ami" "latest-amazon-linux-image" {
+data "aws_ami" "latest_amazon_linux_image" {
   most_recent = true
   owners      = ["amazon"]
 
   filter {
     name   = "name"
-    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+    values = ["Deep Learning Proprietary Nvidia Driver AMI GPU TensorFlow 2.16 (Amazon Linux 2) 20240607"]
   }
 
   filter {
@@ -96,19 +93,23 @@ data "aws_ami" "latest-amazon-linux-image" {
   }
 }
 
-resource "aws_instance" "myapp-server" {
-  ami                    = data.aws_ami.latest-amazon-linux-image.id
-  instance_type          = var.instance_type
-  subnet_id              = aws_subnet.myapp-subnet-1.id
-  vpc_security_group_ids = [aws_security_group.myapp-sg.id]
+resource "aws_key_pair" "ssh_key" {
+  key_name   = "server-key-2"
+  public_key = file("/home/anil_kumar/.ssh/id_ed25519.pub")
+}
+
+resource "aws_instance" "my_app_server_one" {
+  ami                         = data.aws_ami.latest_amazon_linux_image.id
+  instance_type               = var.instance_type
+  subnet_id                   = aws_subnet.my_app_subnet.id
+  vpc_security_group_ids      = [aws_security_group.my_sg.id]
+  availability_zone           = var.avail_zone
   associate_public_ip_address = true
-  key_name               = "myapp-key-pair"
-
-  user_data  = file("entry-script.sh")
-
-  user_data_replace_on_change = true 
+  key_name                    = aws_key_pair.ssh_key.key_name
 
   tags = {
-    Name = "${var.env_prefix}-server"
+    Name = "${var.env_prefix}-server-one"
   }
 }
+
+
