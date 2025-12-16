@@ -2,62 +2,36 @@ trigger:
 - main
 
 variables:
-  image_repository: docker.io/anil2469/nodeapp
-  image_tag: v1.0
-  MICRO_SERVICE_NAME: nodeapp
-  DEPLOYMENT_ENVIRONMENT: dev
+  IMAGE_NAME: myapp
+  IMAGE_TAG: "1.0"
 
 pool:
-  name: Default
+  name: Default   # or your self-hosted agent pool (EC2)
 
 stages:
-# ---------------- TEST STAGE ----------------
-- stage: Test
-  displayName: Test stage
+- stage: BuildAndPush
+  displayName: Build and Push Docker Image
   jobs:
-  - job: UnitTests
-    displayName: Run unit tests
+  - job: DockerBuildPush
+    displayName: Build & Push Image
     steps:
-    - script: echo "Preparing test data..."
-      displayName: Prepare test data
 
+    # Print environment info
     - script: |
-        echo "Running unit tests for micro service $(MICRO_SERVICE_NAME) ..."
-      displayName: Run unit tests
+        echo "Linux user: $(whoami)"
+        echo "Docker image name: $(IMAGE_NAME)"
+        echo "Docker image tag: $(IMAGE_TAG)"
+      displayName: "Print build info"
 
-    - script: echo "Cleaning up temporary files..."
-      displayName: Cleanup
-
-# ---------------- BUILD STAGE ----------------
-- stage: Build
-  displayName: Build stage
-  dependsOn: Test
-  jobs:
-  - job: BuildAndPush
-    displayName: Build and push image
-    steps:
-    - script: echo "Building the docker image..."
-      displayName: Build image
-
-    - script: |
-        echo "Tagging the docker image $(image_repository):$(image_tag) ..."
-      displayName: Tag image
-
-    - script: echo "Logging into docker registry..."
-      displayName: Docker login
-
-    - script: |
-        echo "Pushing docker image $(image_repository):$(image_tag) to registry..."
-      displayName: Push image
-
-# ---------------- DEPLOY STAGE ----------------
-- stage: Deploy
-  displayName: Deploy stage
-  dependsOn: Build
-  jobs:
-  - job: Deploy
-    displayName: Deploy image
-    steps:
-    - script: |
-        echo "Deploying docker image $(image_repository):$(image_tag) to $(DEPLOYMENT_ENVIRONMENT) server..."
-      displayName: Deploy
+    # Build & Push using Docker service connection
+    # Multi-stage Dockerfile handles Maven build internally (eclipse-temurin:17-jdk-jammy)
+    - task: Docker@2
+      displayName: Build and Push Docker Image
+      inputs:
+        containerRegistry: dockerhub-con
+        repository: $(IMAGE_NAME)
+        command: buildAndPush
+        Dockerfile: Dockerfile
+        buildContext: .
+        tags: |
+          $(IMAGE_TAG)
