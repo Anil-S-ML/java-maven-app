@@ -23,17 +23,8 @@ stages:
         echo "Docker image tag: $(IMAGE_TAG)"
       displayName: "Print build info"
 
-    # Build the Maven project (required if Dockerfile doesn't use multi-stage build)
-    - task: Maven@4
-      displayName: Build with Maven
-      inputs:
-        mavenPomFile: 'pom.xml'
-        goals: 'clean package'
-        options: '-DskipTests'
-        javaHomeOption: 'JDKVersion'
-        jdkVersionOption: '1.17'
-
     # Build & Push using Docker service connection
+    # Multi-stage Dockerfile handles Maven build internally
     - task: Docker@2
       displayName: Build and Push Docker Image
       inputs:
