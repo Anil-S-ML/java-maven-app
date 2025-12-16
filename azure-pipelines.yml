@@ -32,7 +32,7 @@ stages:
   - job: BuildAndPush
     displayName: Build and push docker image
     steps:
-    - script: wrong-command "Building the docker image..."
+    - script: echo "Building the docker image..."
       displayName: Build docker image (intentional failure)
 
     - script: echo "Tagging the docker image..."
