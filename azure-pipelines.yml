@@ -2,7 +2,7 @@ trigger:
 - main
 
 pool:
-  vmImage: default
+  name: default
 
 stages:
 # ---------------- TEST STAGE ----------------
