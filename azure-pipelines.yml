@@ -1,56 +1,63 @@
 trigger:
 - main
 
+variables:
+  image_repository: docker.io/anil2469/nodeapp
+  image_tag: v1.0
+  MICRO_SERVICE_NAME: nodeapp
+  DEPLOYMENT_ENVIRONMENT: dev
+  PROPERTIES_FILE: app.properties
+
 pool:
-  name: default
+  name: Default
 
 stages:
-# ---------------- TEST STAGE ----------------
 - stage: Test
   displayName: Test stage
   jobs:
-  - job: Tests
-    displayName: Run unit & lint tests
+  - job: UnitTests
+    displayName: Run unit tests
     steps:
     - script: echo "Preparing test data..."
       displayName: Prepare test data
 
-    - script: echo "Running unit tests..."
+    - script: |
+        echo "Running unit tests for micro service $(MICRO_SERVICE_NAME) ..."
       displayName: Run unit tests
-
-    - script: echo "Running lint tests..."
-      displayName: Run lint tests
 
     - script: echo "Cleaning up temporary files..."
       displayName: Cleanup
 
-# ---------------- BUILD STAGE ----------------
 - stage: Build
   displayName: Build stage
   dependsOn: Test
   jobs:
   - job: BuildAndPush
-    displayName: Build and push docker image
+    displayName: Build and push image
     steps:
     - script: echo "Building the docker image..."
-      displayName: Build docker image (intentional failure)
+      displayName: Build image
 
-    - script: echo "Tagging the docker image..."
-      displayName: Tag docker image
+    - script: |
+        echo "Tagging the docker image $(image_repository):$(image_tag) ..."
+      displayName: Tag image
 
     - script: echo "Logging into docker registry..."
       displayName: Docker login
 
-    - script: echo "Pushing docker image to registry..."
-      displayName: Push docker image
+    - script: |
+        echo "Pushing docker image $(image_repository):$(image_tag) to registry..."
+      displayName: Push image
 
-# ---------------- DEPLOY STAGE ----------------
 - stage: Deploy
   displayName: Deploy stage
   dependsOn: Build
   jobs:
   - job: Deploy
-    displayName: Deploy docker image
+    displayName: Deploy image
     steps:
-    - script: echo "Deploying docker image to dev server..."
+    - script: |
+        echo "Deploying docker image $(image_repository):$(image_tag) to dev server..."
+        echo "Deploying docker image to $(DEPLOYMENT_ENVIRONMENT) using the following configuration file - $(PROPERTIES_FILE)..."
+        cat $(PROPERTIES_FILE)
       displayName: Deploy
