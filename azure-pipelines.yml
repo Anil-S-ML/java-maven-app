@@ -6,12 +6,12 @@ variables:
   image_tag: v1.0
   MICRO_SERVICE_NAME: nodeapp
   DEPLOYMENT_ENVIRONMENT: dev
-  PROPERTIES_FILE: app.properties
 
 pool:
   name: Default
 
 stages:
+# ---------------- TEST STAGE ----------------
 - stage: Test
   displayName: Test stage
   jobs:
@@ -28,6 +28,7 @@ stages:
     - script: echo "Cleaning up temporary files..."
       displayName: Cleanup
 
+# ---------------- BUILD STAGE ----------------
 - stage: Build
   displayName: Build stage
   dependsOn: Test
@@ -49,6 +50,7 @@ stages:
         echo "Pushing docker image $(image_repository):$(image_tag) to registry..."
       displayName: Push image
 
+# ---------------- DEPLOY STAGE ----------------
 - stage: Deploy
   displayName: Deploy stage
   dependsOn: Build
@@ -57,7 +59,5 @@ stages:
     displayName: Deploy image
     steps:
     - script: |
-        echo "Deploying docker image $(image_repository):$(image_tag) to dev server..."
-        echo "Deploying docker image to $(DEPLOYMENT_ENVIRONMENT) using the following configuration file - $(PROPERTIES_FILE)..."
-        cat $(PROPERTIES_FILE)
+        echo "Deploying docker image $(image_repository):$(image_tag) to $(DEPLOYMENT_ENVIRONMENT) server..."
       displayName: Deploy
