@@ -1,12 +1,41 @@
-version: "3.8"
+# version: "3.8"
+# services:
+#   java-maven-app:
+#     image:  anil2469/applisting:java-maven-1.0
+#     ports:
+#       - "8080:8080"
+#   postgres:
+#     image: postgres:13
+#     ports:
+#       - "5432:5432"
+#     environment:
+#       POSTGRES_PASSWORD: my-pass
+version: '3'
+
 services:
-  java-maven-app:
-    image:  anil2469/applisting:java-maven-1.0
+
+  mongodb:
+    image: mongo
     ports:
-      - "8080:8080"
-  postgres:
-    image: postgres:13
-    ports:
-      - "5432:5432"
+      - 27017:27017
     environment:
-      POSTGRES_PASSWORD: my-pass
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=secret
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-express
+    restart: always
+    ports:
+      - 8080:8081
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=admin
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=secret
+      - ME_CONFIG_MONGODB_SERVER=mongodb
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo-data:
+    driver: local
