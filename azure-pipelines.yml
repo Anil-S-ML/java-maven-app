@@ -1,181 +1,70 @@
 trigger:
-  branches:
-    include:
-      - main
-      - master
-      - develop
-
-pool:
-  vmImage: 'ubuntu-latest'
-
-variables:
-  IMAGE_NAME: 'java-maven-1.0'
-  DOCKER_REPO_SERVER: '004380138556.dkr.ecr.us-east-1.amazonaws.com'
-  DOCKER_REPO: '$(DOCKER_REPO_SERVER)/java-maven-app'
-  AWS_REGION: 'us-east-1'
-  TF_VAR_env_prefix: 'test'
-  MAVEN_CACHE_FOLDER: $(Pipeline.Workspace)/.m2/repository
-  MAVEN_OPTS: '-Dmaven.repo.local=$(MAVEN_CACHE_FOLDER)'
+- main
 
 stages:
-  - stage: Build
-    displayName: 'Build Application'
-    jobs:
-      - job: BuildJob
-        displayName: 'Build Maven Application'
-        steps:
-          - checkout: self
-            displayName: 'Checkout Code'
+# ---------------- TEST STAGE ----------------
+- stage: Test
+  displayName: Test stage
+  jobs:
+  - job: UnitTests
+    displayName: Run unit tests
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Preparing test data..."
+      displayName: Before script
+    - script: echo "Running unit tests..."
+      displayName: Run tests
+    - script: echo "Cleaning up temporary files..."
+      displayName: After script
 
-          - task: Cache@2
-            displayName: 'Cache Maven packages'
-            inputs:
-              key: 'maven | "$(Agent.OS)" | **/pom.xml'
-              restoreKeys: |
-                maven | "$(Agent.OS)"
-                maven
-              path: $(MAVEN_CACHE_FOLDER)
+  - job: LintTests
+    displayName: Run lint tests
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Preparing test data..."
+      displayName: Before script
+    - script: echo "Running lint tests..."
+      displayName: Run lint
+    - script: echo "Cleaning up temporary files..."
+      displayName: After script
 
-          - task: Maven@3
-            displayName: 'Maven Build'
-            inputs:
-              mavenPomFile: 'pom.xml'
-              goals: 'clean package'
-              options: '-DskipTests'
-              publishJUnitResults: false
-              javaHomeOption: 'JDKVersion'
-              jdkVersionOption: '1.17'
-              mavenVersionOption: 'Default'
-              mavenOptions: '$(MAVEN_OPTS)'
-              mavenAuthenticateFeed: false
+# ---------------- BUILD STAGE ----------------
+- stage: Build
+  displayName: Build stage
+  dependsOn: Test
+  jobs:
+  - job: BuildImage
+    displayName: Build Docker image
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: wrong-command "Building the docker image..."
+      displayName: Build image (will fail)
+    - script: echo "Tagging the docker image..."
+      displayName: Tag image
 
-          - task: PublishBuildArtifacts@1
-            displayName: 'Publish JAR Artifact'
-            inputs:
-              PathtoPublish: 'target'
-              ArtifactName: 'maven-build'
-              publishLocation: 'Container'
+  - job: PushImage
+    displayName: Push Docker image
+    dependsOn: BuildImage
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Logging into docker registry..."
+      displayName: Docker login
+    - script: echo "Pushing docker image to registry..."
+      displayName: Push image
 
-  - stage: Docker
-    displayName: 'Build and Push Docker Image'
-    dependsOn: Build
-    jobs:
-      - job: DockerJob
-        displayName: 'Docker Build & Push to ECR'
-        steps:
-          - checkout: self
-            displayName: 'Checkout Code'
-
-          - task: DownloadBuildArtifacts@1
-            displayName: 'Download Build Artifacts'
-            inputs:
-              buildType: 'current'
-              downloadType: 'single'
-              artifactName: 'maven-build'
-              downloadPath: '$(System.DefaultWorkingDirectory)'
-
-          - script: |
-              mv $(System.DefaultWorkingDirectory)/maven-build $(System.DefaultWorkingDirectory)/target
-            displayName: 'Restore target directory'
-
-          - task: AWSShellScript@1
-            displayName: 'Login to AWS ECR'
-            inputs:
-              awsCredentials: 'AWS-Service-Connection'  # Replace with your service connection name
-              regionName: '$(AWS_REGION)'
-              scriptType: 'inline'
-              inlineScript: |
-                aws ecr get-login-password --region $(AWS_REGION) | docker login --username AWS --password-stdin $(DOCKER_REPO_SERVER)
-
-          - task: Docker@2
-            displayName: 'Build Docker Image'
-            inputs:
-              command: 'build'
-              Dockerfile: 'Dockerfile'
-              tags: '$(IMAGE_NAME)'
-              repository: '$(DOCKER_REPO)'
-
-          - script: |
-              docker push $(DOCKER_REPO):$(IMAGE_NAME)
-            displayName: 'Push Docker Image to ECR'
-
-  - stage: Provision
-    displayName: 'Provision Infrastructure'
-    dependsOn: Docker
-    jobs:
-      - job: TerraformJob
-        displayName: 'Terraform Provision'
-        steps:
-          - checkout: self
-            displayName: 'Checkout Code'
-
-          - task: TerraformInstaller@0
-            displayName: 'Install Terraform'
-            inputs:
-              terraformVersion: 'latest'
-
-          - task: AWSShellScript@1
-            displayName: 'Terraform Init, Plan & Apply'
-            inputs:
-              awsCredentials: 'AWS-Service-Connection'  # Replace with your service connection name
-              regionName: '$(AWS_REGION)'
-              scriptType: 'inline'
-              inlineScript: |
-                cd terraform
-                rm -rf .terraform* terraform.tfstate*
-                terraform init -reconfigure
-                terraform destroy --auto-approve || true
-                terraform fmt
-                terraform validate
-                terraform plan
-                terraform apply --auto-approve
-                
-                # Capture EC2 Public IP
-                EC2_PUBLIC_IP=$(terraform output -raw aws_public_ip)
-                echo "##vso[task.setvariable variable=EC2_PUBLIC_IP;isOutput=true]$EC2_PUBLIC_IP"
-                echo "EC2 Public IP: $EC2_PUBLIC_IP"
-            name: 'TerraformOutput'
-
-  - stage: Deploy
-    displayName: 'Deploy to EC2'
-    dependsOn: Provision
-    jobs:
-      - deployment: DeployJob
-        displayName: 'Deploy Application'
-        environment: 'production'  # Create this environment in Azure DevOps
-        variables:
-          EC2_PUBLIC_IP: $[ stageDependencies.Provision.TerraformJob.outputs['TerraformOutput.EC2_PUBLIC_IP'] ]
-        strategy:
-          runOnce:
-            deploy:
-              steps:
-                - checkout: self
-                  displayName: 'Checkout Code'
-
-                - task: DownloadSecureFile@1
-                  name: sshKey
-                  displayName: 'Download SSH Private Key'
-                  inputs:
-                    secureFile: 'ec2-ssh-key.pem'  # Upload your SSH key to Azure Pipelines Library
-
-                - script: |
-                    echo "Waiting for EC2 server to initialize..."
-                    sleep 90
-                  displayName: 'Wait for EC2 Initialization'
-
-                - script: |
-                    chmod 600 $(sshKey.secureFilePath)
-                    
-                    echo "EC2 Public IP: $(EC2_PUBLIC_IP)"
-                    
-                    # Copy deployment scripts
-                    scp -o StrictHostKeyChecking=no -i $(sshKey.secureFilePath) server-cmnds.sh ec2-user@$(EC2_PUBLIC_IP):/home/ec2-user/
-                    scp -o StrictHostKeyChecking=no -i $(sshKey.secureFilePath) docker-compose.yml ec2-user@$(EC2_PUBLIC_IP):/home/ec2-user/
-                    
-                    # Execute deployment script
-                    ssh -o StrictHostKeyChecking=no -i $(sshKey.secureFilePath) ec2-user@$(EC2_PUBLIC_IP) "bash /home/ec2-user/server-cmnds.sh $(IMAGE_NAME)"
-                    
-                    echo "✅ Deployment Complete!"
-                    echo "🌐 Application URL: http://$(EC2_PUBLIC_IP):8080"
-                  displayName: 'Deploy to EC2 via SSH'
-
+# ---------------- DEPLOY STAGE ----------------
+- stage: Deploy
+  displayName: Deploy stage
+  dependsOn: Build
+  jobs:
+  - job: DeployImage
+    displayName: Deploy image
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - script: echo "Deploying docker image to dev server..."
+      displayName: Deploy
