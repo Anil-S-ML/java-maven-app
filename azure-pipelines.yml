@@ -1,70 +1,56 @@
 trigger:
 - main
 
+pool:
+  vmImage: 'ubuntu-latest'
+
 stages:
 # ---------------- TEST STAGE ----------------
 - stage: Test
   displayName: Test stage
   jobs:
-  - job: UnitTests
-    displayName: Run unit tests
-    pool:
-      vmImage: 'ubuntu-latest'
+  - job: Tests
+    displayName: Run unit & lint tests
     steps:
     - script: echo "Preparing test data..."
-      displayName: Before script
-    - script: echo "Running unit tests..."
-      displayName: Run tests
-    - script: echo "Cleaning up temporary files..."
-      displayName: After script
+      displayName: Prepare test data
 
-  - job: LintTests
-    displayName: Run lint tests
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
-    - script: echo "Preparing test data..."
-      displayName: Before script
+    - script: echo "Running unit tests..."
+      displayName: Run unit tests
+
     - script: echo "Running lint tests..."
-      displayName: Run lint
+      displayName: Run lint tests
+
     - script: echo "Cleaning up temporary files..."
-      displayName: After script
+      displayName: Cleanup
 
 # ---------------- BUILD STAGE ----------------
 - stage: Build
   displayName: Build stage
   dependsOn: Test
   jobs:
-  - job: BuildImage
-    displayName: Build Docker image
-    pool:
-      vmImage: 'ubuntu-latest'
+  - job: BuildAndPush
+    displayName: Build and push docker image
     steps:
     - script: wrong-command "Building the docker image..."
-      displayName: Build image (will fail)
-    - script: echo "Tagging the docker image..."
-      displayName: Tag image
+      displayName: Build docker image (intentional failure)
 
-  - job: PushImage
-    displayName: Push Docker image
-    dependsOn: BuildImage
-    pool:
-      vmImage: 'ubuntu-latest'
-    steps:
+    - script: echo "Tagging the docker image..."
+      displayName: Tag docker image
+
     - script: echo "Logging into docker registry..."
       displayName: Docker login
+
     - script: echo "Pushing docker image to registry..."
-      displayName: Push image
+      displayName: Push docker image
 
 # ---------------- DEPLOY STAGE ----------------
 - stage: Deploy
   displayName: Deploy stage
   dependsOn: Build
   jobs:
-  - job: DeployImage
-    displayName: Deploy image
-    pool:
-      vmImage: 'ubuntu-latest'
+  - job: Deploy
+    displayName: Deploy docker image
     steps:
     - script: echo "Deploying docker image to dev server..."
       displayName: Deploy
